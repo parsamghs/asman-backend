@@ -1,5 +1,5 @@
 const pool = require('../../db');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const createLog = require('../logcontrollers/createlog');
 const { CONSTANTS, validateCodeMeli, normalizeText } = require('../../utils/constants');
 

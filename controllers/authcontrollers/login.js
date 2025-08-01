@@ -1,6 +1,6 @@
 const pool = require('../../db');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { validateCodeMeli } = require('../../utils/constants');
 
 exports.login = async (req, res) => {
