@@ -6,32 +6,48 @@ moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 exports.getAllOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const pageSize = 20;
-    const offset = (page - 1) * pageSize;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
     const status = req.query.status === 'all' ? null : req.query.status || null;
 
     const dealerId = req.user.dealer_id;
 
+    const totalCountResult = await pool.query(`
+  SELECT COUNT(DISTINCT customers.id) AS total
+  FROM customers
+  LEFT JOIN receptions ON receptions.customer_id = customers.id
+  LEFT JOIN orders ON orders.reception_id = receptions.id
+  WHERE customers.dealer_id = $2 AND ($1::text IS NULL OR orders.status = $1)
+`, [status, dealerId]);
+
+    const totalCustomers = parseInt(totalCountResult.rows[0].total);
+    const totalPages = Math.ceil(totalCustomers / limit);
+
 
     const customerIdsResult = await pool.query(`
       SELECT DISTINCT customers.id
-      FROM customers
-      LEFT JOIN receptions ON receptions.customer_id = customers.id
-      LEFT JOIN orders ON orders.reception_id = receptions.id
-      WHERE customers.dealer_id = $4 AND ($1::text IS NULL OR orders.status = $1)
-      ORDER BY customers.id
-      LIMIT $2 OFFSET $3
-    `, [status, pageSize, offset, dealerId]);
+        FROM customers
+        LEFT JOIN receptions ON receptions.customer_id = customers.id
+        LEFT JOIN orders ON orders.reception_id = receptions.id
+        WHERE customers.dealer_id = $2 AND ($1::text IS NULL OR orders.status = $1)
+        ORDER BY customers.id
+        LIMIT $3 OFFSET $4
+    `, [status, dealerId, limit, offset]);
+
 
     const customerIds = customerIdsResult.rows.map(row => row.id);
 
+
+
     if (customerIds.length === 0) {
       return res.json({
-        currentPage: page,
-        totalPages: 0,
-        totalCustomers: 0,
-        pageSize,
         data: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 0,
+          totalCustomers: 0,
+          limit
+        }
       });
     }
 
@@ -69,17 +85,6 @@ exports.getAllOrders = async (req, res) => {
       WHERE customers.id = ANY($1) AND customers.dealer_id = $2 AND ($3::text IS NULL OR orders.status = $3)
       ORDER BY customers.id, receptions.id, orders.id
     `, [customerIds, dealerId, status]);
-
-    const countResult = await pool.query(`
-      SELECT COUNT(DISTINCT customers.id) AS total
-      FROM customers
-      LEFT JOIN receptions ON receptions.customer_id = customers.id
-      LEFT JOIN orders ON orders.reception_id = receptions.id
-      WHERE customers.dealer_id = $2 AND ($1::text IS NULL OR orders.status = $1)
-    `, [status, dealerId]);
-
-    const totalCustomers = parseInt(countResult.rows[0].total);
-    const totalPages = Math.ceil(totalCustomers / pageSize);
 
     const groupedByCustomer = {};
 
@@ -191,11 +196,13 @@ exports.getAllOrders = async (req, res) => {
     });
 
     res.json({
-      currentPage: page,
-      totalPages,
-      totalCustomers,
-      pageSize,
-      data: Object.values(groupedByCustomer)
+      data: Object.values(groupedByCustomer),
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCustomers,
+        limit
+      }
     });
 
   } catch (err) {

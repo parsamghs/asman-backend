@@ -1,6 +1,6 @@
 const pool = require('../../db');
 const createLog = require('../logcontrollers/createlog');
-const { CONSTANTS, normalizeText } = require('../../utils/constants');
+const {CONSTANTS} = require('../../utils/constants');
 const {
   validateJalaliDate,
   validateWithRegex
@@ -30,8 +30,8 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    if (!chassis_number || typeof chassis_number !== 'string' || chassis_number.trim().length > 50) {
-      return res.status(400).json({ message: `شماره شاسی الزامی است و نباید بیشتر از ۵۰ کاراکتر باشد.` });
+    if (chassis_number && chassis_number.trim().length > 20) {
+      return res.status(400).json({ message: `شماره شاسی نباید بیشتر از 20 کاراکتر باشد.` });
     }
 
     const receptionDateResult = validateJalaliDate(reception_date, 'پذیرش');
@@ -68,6 +68,14 @@ exports.addOrder = async (req, res) => {
 
       if (!Number.isInteger(order.estimated_arrival_days) || order.estimated_arrival_days < -10) {
         return res.status(400).json({ message: `estimated_arrival_days باید عدد صحیح غیرمنفی باشد.` });
+      }
+
+      if (!order.piece_name || typeof order.piece_name !== 'string' || order.piece_name.trim() === '') {
+        return res.status(400).json({ message: `نام قطعه الزامی است.` });
+      }
+
+      if (!order.order_number || typeof order.order_number !== 'string' || order.order_number.trim() === '') {
+        return res.status(400).json({ message: `شماره سفارش الزامی است.` });
       }
 
       order.status = order.order_channel === 'بازار آزاد'
@@ -154,17 +162,7 @@ exports.addOrder = async (req, res) => {
       const orderDateTime = moment(`${todayJalali} ${iranTime}`, 'jYYYY/jMM/jDD HH:mm:ss');
       const orderDateFormatted = orderDateTime.format('YYYY-MM-DD HH:mm:ss');
 
-      const deliveryDate = order.delivery_date
-        ? moment(order.delivery_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD')
-        : null;
-
       const estimatedArrivalDate = orderDateTime.clone().add(order.estimated_arrival_days, 'days').format('YYYY-MM-DD');
-
-      if (!CONSTANTS.order_channels.includes(order.order_channel)) {
-        return res.status(400).json({
-          message: `کانال سفارش نامعتبر است. باید یکی از این گزینه‌ها باشد: ${CONSTANTS.order_channels.join('، ')}`
-        });
-      }
 
       if (!['بازار آزاد', 'شارژ انبار'].includes(order.order_channel)) {
         if (!order.part_id || typeof order.part_id !== 'string' || order.part_id.trim() === '') {
@@ -204,13 +202,6 @@ exports.addOrder = async (req, res) => {
           order.order_number,
           car_name
         ]
-      );
-
-      const orderId = insertOrder.rows[0].id;
-
-      await client.query(
-        `UPDATE receptions SET order_id = $1 WHERE id = $2`,
-        [orderId, receptionId]
       );
     }
 

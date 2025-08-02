@@ -11,7 +11,7 @@ const rawConstants = {
 
   regex: {
     name: /^[\u0600-\u06FF\s]{1,50}$/,
-    phone: /^[0-9]{11}$/,
+    phone: /^(0|\+98|0098)?[1-9][0-9]{9}$/,
     number: /^[0-9]{1,30}$/,
     password: /^[0-9]{4,}$/,
     code_meli: /^\d{10}$/,

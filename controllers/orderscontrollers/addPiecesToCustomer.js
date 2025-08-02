@@ -39,8 +39,13 @@ exports.addPiecesToCustomer = async (req, res) => {
       });
     }
 
-    if (!chassis_number || typeof chassis_number !== 'string' || chassis_number.trim().length > 50) {
-      return res.status(400).json({ message: `شماره شاسی الزامی است و نباید بیشتر از ۵۰ کاراکتر باشد.` });
+    if (chassis_number != null) {
+      if (typeof chassis_number !== 'string') {
+        return res.status(400).json({ message: 'شماره شاسی باید رشته باشد.' });
+      }
+      if (chassis_number.trim().length > 20) {
+        return res.status(400).json({ message: 'شماره شاسی نباید بیشتر از ۲۰ کاراکتر باشد.' });
+      }
     }
 
     const client = await pool.connect();
@@ -62,7 +67,7 @@ exports.addPiecesToCustomer = async (req, res) => {
       const receptionResult = await client.query(
         `INSERT INTO receptions (customer_id, reception_number, reception_date, car_status, chassis_number) 
          VALUES ($1, $2, $3, $4) RETURNING id`,
-        [customer_id, reception_number, formattedReceptionDate, car_status, chassis_number.trim()]
+        [customer_id, reception_number, formattedReceptionDate, car_status, chassis_number?.trim() || null]
       );
 
       const reception_id = receptionResult.rows[0].id;

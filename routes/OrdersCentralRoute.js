@@ -13,6 +13,10 @@ router.use('/deleteorder', require('./OrdersRoutes/DeleteOrderPieceRoute'));
 
 router.use('/all', require('./OrdersRoutes/GetAllOrdersRoute'));
 
+router.use('/orders-count', require('./OrdersRoutes/OrdersCountRoute'));
+
+router.use('/search-orders',require('./OrdersRoutes/OrdersSearchRoute'));
+
 router.use('/suggest-parts', require('./OrdersRoutes/PartsAutoCompleteRoute'));
 
 router.use('/partname-suggest', require('./OrdersRoutes/PartNameAutoCompleteRoute'));
@@ -30,5 +34,6 @@ router.use('/addlostorder', require('./OrdersRoutes/AddLostOrderRoute'));
 router.use('/update-lost-order', require('./OrdersRoutes/UpdateLostOrderRoute'));
 
 router.use('/delete-lost-order', require('./OrdersRoutes/DeleteLostOrderRoute'));
+
 
 module.exports = router;
