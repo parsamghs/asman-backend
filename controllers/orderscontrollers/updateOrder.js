@@ -55,7 +55,7 @@ exports.updateOrder = async (req, res) => {
     const canEditDeliveryDate = userRole === 'انباردار';
 
     if (
-      (status === 'دریافت شد') &&
+      (status === 'دریافت شد' || status === 'در انتظار نوبت دهی') &&
       canEditStatus
     ) {
       newDeliveryDate = moment().tz('Asia/Tehran').format('YYYY/MM/DD hh:mm');
@@ -226,26 +226,25 @@ WHERE id = $10;`;
         message: `سفارشی با شناسه ${orderId} یافت نشد یا تغییر نکرد.`
       });
     }
-    console.log('Raw status bytes:', Buffer.from(status));
-    console.log('status from req.body:', status);
-    console.log('newStatus before switch:', newStatus);
-    console.log('user role:', userRole);
 
     let logMessage = `سفارش مشتری "${customerName}" ویرایش شد`;
 
     if (newStatus) {
       switch (newStatus) {
-        case 'تائید توسط شرکت':
+        case 'در انتظار تائید حسابداری':
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" توسط شرکت تأیید شد`;
           break;
         case 'لغو توسط شرکت':
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" به دلیل "${newDescription || 'نداشتن توضیحات'}" توسط شرکت لغو شد`;
           break;
-        case 'پرداخت شد':
+        case 'در انتظار دریافت':
           logMessage = `سفارش "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مشتری "${customerName}" توسط حسابداری پرداخت گردید`;
           break;
         case 'عدم پرداخت حسابداری':
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" به دلیل "${newDescription || 'نداشتن توضیحات'}" توسط حسابدار پرداخت نشد`;
+          break;
+        case 'در انتظار نوبت دهی':
+          logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}"توسط انباردار دریافت شد و در انتظار نوبت دهی است`;
           break;
         case 'دریافت شد':
           logMessage = `سفارش "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مشتری "${customerName}" توسط انباردار دریافت شد`;

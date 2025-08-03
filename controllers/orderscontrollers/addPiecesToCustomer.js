@@ -120,16 +120,17 @@ exports.addPiecesToCustomer = async (req, res) => {
 
           const insertResult = await client.query(
             `INSERT INTO orders (
-    customer_id, reception_id, order_number, piece_name, part_id, number_of_pieces, 
-    order_channel, market_name, market_phone, order_date, delivery_date, 
-    estimated_arrival_days, estimated_arrival_date, status, all_description,
-    car_name
-  ) VALUES (
-    $1, $2, $3, $4, $5, $6,
-    $7, $8, $9, $10, NULL,
-    $11, $12, $13, $14,
-    $15
-  ) RETURNING id`,
+  customer_id, reception_id, order_number, piece_name, part_id, number_of_pieces, 
+  order_channel, market_name, market_phone, order_date,
+  estimated_arrival_days, estimated_arrival_date, status, all_description,
+  car_name
+)
+VALUES (
+  $1, $2, $3, $4, $5, $6,
+  $7, $8, $9, $10,
+  $11, $12, $13, $14,
+  $15
+)RETURNING id`,
             [
               customer_id,
               reception_id,
