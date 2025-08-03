@@ -226,6 +226,10 @@ WHERE id = $10;`;
         message: `سفارشی با شناسه ${orderId} یافت نشد یا تغییر نکرد.`
       });
     }
+    console.log('Raw status bytes:', Buffer.from(status));
+    console.log('status from req.body:', status);
+    console.log('newStatus before switch:', newStatus);
+    console.log('user role:', userRole);
 
     let logMessage = `سفارش مشتری "${customerName}" ویرایش شد`;
 
