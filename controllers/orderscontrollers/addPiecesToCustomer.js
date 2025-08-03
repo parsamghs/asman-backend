@@ -66,7 +66,7 @@ exports.addPiecesToCustomer = async (req, res) => {
 
       const receptionResult = await client.query(
         `INSERT INTO receptions (customer_id, reception_number, reception_date, car_status, chassis_number) 
-         VALUES ($1, $2, $3, $4) RETURNING id`,
+         VALUES ($1, $2, $3, $4 , $5) RETURNING id`,
         [customer_id, reception_number, formattedReceptionDate, car_status, chassis_number?.trim() || null]
       );
 
