@@ -5,27 +5,31 @@ moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 exports.getLogs = async (req, res) => {
   const userRole = req.user?.role;
+  const dealerId = req.user?.dealer_id;
 
   if (userRole !== 'مدیریت') {
     return res.status(403).json({ error: 'دسترسی غیرمجاز' });
   }
 
   try {
-    const result = await pool.query(`
-      SELECT id, log_time, action, message, user_id ,user_name
+    const result = await pool.query(
+      `
+      SELECT id, log_time, action, message, user_id, user_name
       FROM logs
+      WHERE dealer_id = $1
       ORDER BY log_time DESC
-    `);
+      `,
+      [dealerId]
+    );
 
     const logs = result.rows.map((log) => {
       const localMoment = moment(log.log_time).tz('Asia/Tehran');
-
       return {
         id: log.id,
         uses_id: log.user_id,
         action: log.action,
         message: log.message,
-        user_name:log.user_name,
+        user_name: log.user_name,
         date: localMoment.format('jYYYY/jMM/jDD'),
         time: localMoment.format('hh:mm:ss'),
       };
@@ -37,3 +41,4 @@ exports.getLogs = async (req, res) => {
     res.status(500).json({ error: 'خطای سرور در دریافت لاگ‌ها' });
   }
 };
+
