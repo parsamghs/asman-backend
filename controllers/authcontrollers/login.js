@@ -2,6 +2,7 @@ const pool = require('../../db');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { validateCodeMeli } = require('../../utils/constants');
+console.log('🌐 Login controller loaded');
 
 exports.login = async (req, res) => {
   const { code_meli, password } = req.body;
@@ -13,6 +14,8 @@ exports.login = async (req, res) => {
   if (!validateCodeMeli(code_meli)) {
     return res.status(400).json({ message: 'کد ملی باید دقیقاً ۱۰ رقم عدد باشد' });
   }
+
+  console.log('🧪 Trying to connect with DB config...');
 
   try {
     const result = await pool.query('SELECT * FROM login WHERE code_meli = $1', [code_meli]);
