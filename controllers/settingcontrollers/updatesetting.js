@@ -2,7 +2,7 @@ const pool = require('../../db');
 
 exports.updateSetting = async (req, res) => {
   try {
-    const allowedFields = ['vor', 'vis', 'market', 'warhouse_charge'];
+    const allowedFields = ['vor', 'vis', 'market', 'warhouse_charge', 'accounting_approval'];
     const fields = [];
     const values = [];
     let paramIndex = 1;
@@ -10,8 +10,15 @@ exports.updateSetting = async (req, res) => {
     for (const key of allowedFields) {
       if (req.body[key] !== undefined) {
         const value = req.body[key];
-        if (typeof value !== 'string' || value.length > 2) {
-          return res.status(400).json({ message: `مقدار "${key}" نامعتبر است.` });
+
+        if (key !== 'accounting_approval') {
+          if (typeof value !== 'string' || value.length > 2) {
+            return res.status(400).json({ message: `مقدار "${key}" نامعتبر است.` });
+          }
+        } else {
+          if (typeof value !== 'boolean') {
+            return res.status(400).json({ message: `مقدار "${key}" باید بولین (true/false) باشد.` });
+          }
         }
         fields.push(`${key} = $${paramIndex}`);
         values.push(value);
