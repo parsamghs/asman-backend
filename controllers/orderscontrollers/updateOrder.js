@@ -35,8 +35,6 @@ exports.updateOrder = async (req, res) => {
     const { status, delivery_date, description, all_description, appointment_date, appointment_time } = req.body;
     const userRole = req.user?.role;
 
-    console.log(`شروع به‌روزرسانی سفارش با id=${orderId} توسط نقش ${userRole}`);
-
     let successMessages = [];
     let errorMessages = [];
 
