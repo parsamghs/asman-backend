@@ -20,7 +20,6 @@ exports.addDealerAndUser = async (req, res) => {
       }
     } = req.body;
 
-    // چک کردن خالی بودن فیلدها
     if (
       !dealer_code || !dealer_name || !remaining_subscription ||
       !name || !last_name || !code_meli || !password || !phone_number || !role
@@ -28,7 +27,6 @@ exports.addDealerAndUser = async (req, res) => {
       return res.status(400).json({ message: 'تمام فیلدها الزامی هستند.' });
     }
 
-    // ولیدیشن نام و نام خانوادگی
     if (!CONSTANTS.regex.name.test(normalizeText(name))) {
       return res.status(400).json({ message: 'نام معتبر نیست.' });
     }
@@ -36,22 +34,18 @@ exports.addDealerAndUser = async (req, res) => {
       return res.status(400).json({ message: 'نام خانوادگی معتبر نیست.' });
     }
 
-    // ولیدیشن کد ملی
     if (!validateCodeMeli(code_meli)) {
       return res.status(400).json({ message: 'کد ملی معتبر نیست.' });
     }
 
-    // ولیدیشن رمز عبور
     if (!CONSTANTS.regex.password.test(password)) {
       return res.status(400).json({ message: 'رمز عبور باید حداقل ۴ رقم عددی باشد.' });
     }
 
-    // ولیدیشن شماره تلفن
     if (!CONSTANTS.regex.phone.test(phone_number)) {
       return res.status(400).json({ message: 'شماره تلفن معتبر نیست.' });
     }
 
-    // ولیدیشن نقش
     if (!CONSTANTS.roles.includes(normalizeText(role))) {
       return res.status(400).json({ message: 'نقش وارد شده معتبر نیست.' });
     }
@@ -60,7 +54,6 @@ exports.addDealerAndUser = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // ایجاد نمایندگی
     const dealerRes = await client.query(
       `INSERT INTO dealers (dealer_code, dealer_name, remaining_subscription)
        VALUES ($1, $2, $3) RETURNING id`,
@@ -69,7 +62,6 @@ exports.addDealerAndUser = async (req, res) => {
 
     const dealerId = dealerRes.rows[0].id;
 
-    // ایجاد کاربر
     await client.query(
       `INSERT INTO login (name, last_name, code_meli, password, phone_number, role, dealer_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
