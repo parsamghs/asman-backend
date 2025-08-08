@@ -7,7 +7,7 @@ moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 exports.updateMultipleOrderStatus = async (req, res) => {
     const client = await pool.connect();
     try {
-        const { order_ids, new_status, description, final_order_number } = req.body;
+        const { order_ids, new_status, description, final_order_number, appointment_date, appointment_time } = req.body;
 
         if (!Array.isArray(order_ids) || order_ids.length === 0) {
             return res.status(400).json({ message: 'لیست سفارش‌ها خالی است.' });
@@ -31,6 +31,24 @@ exports.updateMultipleOrderStatus = async (req, res) => {
                     message: `وارد کردن توضیحات برای وضعیت "${new_status}" الزامی است.`
                 });
             }
+        }
+
+        if (new_status === 'نوبت داده شد') {
+            if (!appointment_date || !appointment_time || appointment_date.trim() === '' || appointment_time.trim() === '') {
+                return res.status(400).json({
+                    message: 'وارد کردن تاریخ و ساعت نوبت برای وضعیت "نوبت داده شد" الزامی است.'
+                });
+            }
+        }
+
+        let convertedAppointmentDate = appointment_date;
+
+        if (new_status === 'نوبت داده شد' && appointment_date) {
+            const m = moment(appointment_date, 'jYYYY/jMM/jDD');
+            if (!m.isValid()) {
+                return res.status(400).json({ message: 'تاریخ نوبت‌دهی وارد شده معتبر نیست.' });
+            }
+            convertedAppointmentDate = m.format('YYYY-MM-DD');
         }
 
         const orderDetailsRes = await client.query(
@@ -70,17 +88,30 @@ exports.updateMultipleOrderStatus = async (req, res) => {
 
         await client.query('BEGIN');
 
+        const isAppointmentStatus = new_status === 'نوبت داده شد';
+
         const updateResult = await client.query(
             `UPDATE orders
-     SET status = $1,
-         delivery_date = COALESCE($3, delivery_date),
-         final_order_number = COALESCE($4, final_order_number),
-         description = CASE
-           WHEN $2::text IS NOT NULL THEN CONCAT_WS(' / ', description::text, $2::text)
-           ELSE description
-         END
-     WHERE id = ANY($5::int[])`,
-            [new_status, description, deliveryDate, final_order_number?.trim() || null, order_ids]
+   SET status = $1,
+       delivery_date = COALESCE($3, delivery_date),
+       final_order_number = COALESCE($4, final_order_number),
+       appointment_date = CASE WHEN $8 THEN $6 ELSE appointment_date END,
+       appointment_time = CASE WHEN $8 THEN $7 ELSE appointment_time END,
+       description = CASE
+         WHEN $2::text IS NOT NULL THEN CONCAT_WS(' / ', description::text, $2::text)
+         ELSE description
+       END
+   WHERE id = ANY($5::int[])`,
+            [
+                new_status,
+                description,
+                deliveryDate,
+                final_order_number?.trim() || null,
+                order_ids,
+                convertedAppointmentDate,
+                appointment_time,
+                isAppointmentStatus
+            ]
         );
 
         if (['لغو توسط شرکت', 'عدم پرداخت حسابداری'].includes(new_status)) {
