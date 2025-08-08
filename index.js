@@ -19,6 +19,9 @@ const dealersroute = require('./routes/DealersCentralRoute');
 const systemroute = require('./routes/SystemCentralRoute');
 
 const app = express();
+
+app.set('trust proxy', true);
+
 const port = process.env.PORT || 3001;
 
 app.use(cors());
