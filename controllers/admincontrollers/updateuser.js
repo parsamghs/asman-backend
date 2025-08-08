@@ -5,11 +5,16 @@ const { CONSTANTS } = require('../../utils/constants');
 
 exports.updateUser = async (req, res) => {
   const userRole = req.user?.role;
+  const dealer_id = req.user?.dealer_id;
   const userId = parseInt(req.params.id, 10);
   const { name, last_name, code_meli, password, role } = req.body;
 
   if (userRole !== 'مدیریت') {
     return res.status(403).json({ message: 'شما دسترسی به این عملیات ندارید.' });
+  }
+
+  if (!dealer_id) {
+    return res.status(403).json({ message: 'دسترسی غیرمجاز: شناسه نمایندگی یافت نشد.' });
   }
 
   if (!name && !last_name && !code_meli && !password && !role) {
@@ -21,6 +26,11 @@ exports.updateUser = async (req, res) => {
   let index = 1;
 
   try {
+    const checkUser = await pool.query('SELECT * FROM login WHERE id = $1 AND dealer_id = $2', [userId, dealer_id]);
+    if (checkUser.rows.length === 0) {
+      return res.status(404).json({ message: `کاربری با شناسه ${userId} و نمایندگی شما یافت نشد.` });
+    }
+
     if (name !== undefined) {
       const result = validateWithRegex('name', name);
       if (!result.isValid) return res.status(400).json({ message: `نام: ${result.message}` });
@@ -59,12 +69,13 @@ exports.updateUser = async (req, res) => {
     }
 
     values.push(userId);
-    const updateQuery = `UPDATE login SET ${fields.join(', ')} WHERE id = $${index}`;
+    values.push(dealer_id);
+    const updateQuery = `UPDATE login SET ${fields.join(', ')} WHERE id = $${index++} AND dealer_id = $${index}`;
 
     const result = await pool.query(updateQuery, values);
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ message: `کاربری با شناسه ${userId} یافت نشد.` });
+      return res.status(404).json({ message: `کاربری با شناسه ${userId} و نمایندگی شما یافت نشد.` });
     }
 
     res.status(200).json({ message: 'کاربر با موفقیت به‌روزرسانی شد.' });

@@ -1,6 +1,5 @@
 const pool = require('../../db');
 const bcrypt = require('bcryptjs');
-const createLog = require('../logcontrollers/createlog');
 const { CONSTANTS, validateCodeMeli, normalizeText } = require('../../utils/constants');
 
 exports.addDealerAndUser = async (req, res) => {
@@ -67,8 +66,6 @@ exports.addDealerAndUser = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [name, last_name, code_meli, hashedPassword, phone_number, role, dealerId]
     );
-
-    await createLog(req.user?.id || null, 'ایجاد نمایندگی و کاربر', `نمایندگی ${dealer_name} و کاربر ${name} ${last_name} ایجاد شدند.`);
 
     await client.query('COMMIT');
     return res.status(201).json({ message: 'نمایندگی و کاربر با موفقیت ایجاد شدند.' });
