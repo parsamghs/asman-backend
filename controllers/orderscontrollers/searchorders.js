@@ -40,9 +40,27 @@ exports.searchOrders = async (req, res) => {
         };
 
         let filterCondition = '';
-        if (filter && search && filtersMap[filter]) {
-            filterCondition = `AND ${filtersMap[filter]} ILIKE $${paramIndex++}`;
-            values.push(`%${search}%`);
+        if (search) {
+            if (filter && filtersMap[filter]) {
+                filterCondition = `AND ${filtersMap[filter]} ILIKE $${paramIndex++}`;
+                values.push(`%${search}%`);
+            } else {
+                const searchableFields = [
+                    'c.customer_name',
+                    'c.phone_number',
+                    'o.piece_name',
+                    'o.part_id',
+                    'o.order_number',
+                    'r.reception_number'
+                ];
+
+                const conditions = searchableFields.map(field => {
+                    values.push(`%${search}%`);
+                    return `${field} ILIKE $${paramIndex++}`;
+                }).join(' OR ');
+
+                filterCondition = `AND (${conditions})`;
+            }
         }
 
         const dealerIdParam = `$${paramIndex++}`;

@@ -1,5 +1,5 @@
 const pool = require('../../db');
-const redisClient = require('../../utils/redisClient');
+const redisClient = require('../../config/redisClient');
 
 exports.suggestPartsByName = async (req, res) => {
   const q = req.params.partname_id;
