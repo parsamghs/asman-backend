@@ -2,25 +2,13 @@ require('dotenv').config({
   path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
 });
 
-const sms = require('./sms');
-
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
+const requestLogger = require('./middlewares/loggerMiddleware'); 
 
 require('./cronjobs/updatearrivaldays');
 require('./cronjobs/updatesubscription');
-
-async function testSms() {
-  try {
-    const credit = await sms.getCredit();
-    console.log('اعتبار پیامک:', credit);
-  } catch (err) {
-    console.error('خطا:', err);
-  }
-}
-
-testSms();
 
 const authRoutes = require('./routes/AuthCentralRoute');
 const orderRoutes = require('./routes/OrdersCentralRoute');
@@ -35,6 +23,8 @@ const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+app.use(requestLogger); 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);

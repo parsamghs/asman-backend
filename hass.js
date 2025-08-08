@@ -1,8 +1,7 @@
 const bcrypt = require('bcryptjs');
-const pool = require('./db'); // مسیر اتصال به دیتابیس خودت
+const pool = require('./db');
 
 async function isHashed(password) {
-  // بررسی ساده: bcrypt هش‌ها با $2a$ یا $2b$ شروع می‌شن و 60 کاراکتر هستن
   return typeof password === 'string' && password.startsWith('$2') && password.length === 60;
 }
 

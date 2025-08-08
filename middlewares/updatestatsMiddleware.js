@@ -10,7 +10,6 @@ const UpdateStats = async (req, res, next) => {
          DO UPDATE SET last_active = EXCLUDED.last_active`,
         [req.user.id]
       );
-      console.log(`Inserted or updated last_active for user id: ${req.user.id}`);
     }
   } catch (err) {
     console.error('Error updating last_active:', err);}

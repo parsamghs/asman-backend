@@ -17,6 +17,8 @@ router.use('/orders-count', require('./OrdersRoutes/OrdersCountRoute'));
 
 router.use('/search-orders',require('./OrdersRoutes/OrdersSearchRoute'));
 
+router.use('/search-lost-orders', require('./OrdersRoutes/SearchLostOrdersRoute'));
+
 router.use('/suggest-parts', require('./OrdersRoutes/PartsAutoCompleteRoute'));
 
 router.use('/partname-suggest', require('./OrdersRoutes/PartNameAutoCompleteRoute'));
