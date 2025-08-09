@@ -7,7 +7,7 @@ const UpdateStats = require('../../middlewares/updatestatsMiddleware');
 const {updateMultipleOrderStatus} = require('../../controllers/orderscontrollers/bulkupdateorders');
 
 
-router.patch('/', authMiddleware, dealerAccessMiddleware, roleMiddleware('انباردار','مدیریت'), UpdateStats, updateMultipleOrderStatus);
+router.patch('/', authMiddleware, dealerAccessMiddleware, roleMiddleware('انباردار','مدیریت','پذیرش','حسابدار'), UpdateStats, updateMultipleOrderStatus);
 
 
 module.exports = router;
