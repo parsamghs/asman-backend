@@ -14,7 +14,7 @@ const rawConstants = {
     phone: /^(0|\+98|0098)?[1-9][0-9]{9}$/,
     number: /^[0-9]{1,30}$/,
     password: /^[0-9]{4,}$/,
-    code_meli: /^\d{10}$/,
+    code_meli: /^\d{1,30}$/,
     part_id: /^[A-Za-z0-9_\-\/]{1,50}$/,
     part_name: /^[\u0600-\u06FFa-zA-Z0-9\s\-()\/+.,]{1,70}$/
   }
