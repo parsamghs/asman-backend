@@ -1,6 +1,6 @@
 const pool = require('../../db');
 const createLog = require('../logcontrollers/createlog');
-const {CONSTANTS} = require('../../utils/constants');
+const { CONSTANTS } = require('../../utils/constants');
 const {
   validateJalaliDate,
   validateWithRegex
@@ -74,8 +74,10 @@ exports.addOrder = async (req, res) => {
         return res.status(400).json({ message: `نام قطعه الزامی است.` });
       }
 
-      if (!order.order_number || typeof order.order_number !== 'string' || order.order_number.trim() === '') {
-        return res.status(400).json({ message: `شماره سفارش الزامی است.` });
+      if (order.order_channel !== 'VOR') {
+        if (!order.order_number || typeof order.order_number !== 'string' || order.order_number.trim() === '') {
+          return res.status(400).json({ message: `شماره سفارش الزامی است.` });
+        }
       }
 
       order.status = order.order_channel === 'بازار آزاد'
@@ -199,7 +201,7 @@ exports.addOrder = async (req, res) => {
           order.all_description || null,
           receptionId,
           order.status,
-          order.order_number,
+          order.order_number || null,
           car_name
         ]
       );
