@@ -17,6 +17,7 @@ const settingRoute = require('./routes/SettingCentralRoute');
 const reportsroute = require('./routes/ReportsCentralRoute');
 const dealersroute = require('./routes/DealersCentralRoute');
 const systemroute = require('./routes/SystemCentralRoute');
+const dateroute = require('./routes/DateCentralRoutes');
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/setting', settingRoute);
 app.use('/api/reports', reportsroute);
 app.use('/api/dealers', dealersroute);
 app.use('/api/system', systemroute);
+app.use('/api/date', dateroute);
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
