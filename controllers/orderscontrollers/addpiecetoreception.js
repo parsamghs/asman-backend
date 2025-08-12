@@ -51,10 +51,16 @@ exports.addPiecesToExistingReception = async (req, res) => {
       }
 
       for (const [index, order] of orders.entries()) {
+        if (order.order_channel !== 'VOR' && !order.order_number) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({
+            message: `شماره سفارش برای سفارش شماره ${index + 1} الزامی است.`
+          });
+        }
+
         if (
-          !order.order_number ||
           !order.piece_name ||
-          !order.part_id ||
+          (order.order_channel !== 'بازار آزاد' && !order.part_id) ||
           !order.number_of_pieces ||
           !order.order_channel ||
           !CONSTANTS.order_channels.includes(order.order_channel)

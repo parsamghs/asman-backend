@@ -80,8 +80,11 @@ exports.addPiecesToCustomer = async (req, res) => {
 
       for (const [index, order] of orders.entries()) {
         try {
+          if (order.order_channel !== 'VOR' && !order.order_number) {
+            return res.status(400).json({ message: `شماره سفارش برای سفارش شماره ${index + 1} الزامی است.` });
+          }
           if (
-            !order.order_number ||
+            (order.order_channel !== 'VOR' && (!order.order_number || order.order_number.trim() === '')) ||
             !order.piece_name ||
             !order.part_id ||
             !order.number_of_pieces ||
