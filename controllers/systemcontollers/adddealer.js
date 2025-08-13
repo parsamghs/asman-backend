@@ -21,7 +21,7 @@ exports.addDealerAndUser = async (req, res) => {
 
     if (
       !dealer_code || !dealer_name || !remaining_subscription ||
-      !name || !last_name || !code_meli || !password || !phone_number || !role
+      !name || !last_name || !code_meli || !password || !role
     ) {
       return res.status(400).json({ message: 'تمام فیلدها الزامی هستند.' });
     }
@@ -41,12 +41,12 @@ exports.addDealerAndUser = async (req, res) => {
       return res.status(400).json({ message: 'رمز عبور باید حداقل ۴ رقم عددی باشد.' });
     }
 
-    if (!CONSTANTS.regex.phone.test(phone_number)) {
-      return res.status(400).json({ message: 'شماره تلفن معتبر نیست.' });
-    }
-
     if (!CONSTANTS.roles.includes(normalizeText(role))) {
       return res.status(400).json({ message: 'نقش وارد شده معتبر نیست.' });
+    }
+
+    if (phone_number && !CONSTANTS.regex.phone.test(phone_number)) {
+      return res.status(400).json({ message: 'شماره تلفن معتبر نیست.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -64,7 +64,7 @@ exports.addDealerAndUser = async (req, res) => {
     await client.query(
       `INSERT INTO login (name, last_name, code_meli, password, phone_number, role, dealer_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [name, last_name, code_meli, hashedPassword, phone_number, role, dealerId]
+      [name, last_name, code_meli, hashedPassword, phone_number || null, role, dealerId]
     );
 
     await client.query('COMMIT');

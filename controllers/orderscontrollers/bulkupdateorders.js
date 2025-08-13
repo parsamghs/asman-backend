@@ -158,17 +158,20 @@ exports.updateMultipleOrderStatus = async (req, res) => {
             let logMessage = '';
 
             switch (new_status) {
-                case 'تائید توسط شرکت':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط شرکت تأیید شد`;
+                case 'در انتظار تائید حسابداری':
+                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط شرکت تأیید شد و در انتظار تائید حسابداری است`;
                     break;
                 case 'لغو توسط شرکت':
                     logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط شرکت لغو شد`;
                     break;
-                case 'پرداخت شد':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط حسابدار پرداخت شد`;
+                case 'در انتظار دریافت':
+                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط حسابدار پرداخت شد و در انتظار دریافت است `;
                     break;
                 case 'عدم پرداخت حسابداری':
                     logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط حسابدار پرداخت نشد`;
+                    break;
+                case 'در انتظار نوبت دهی':
+                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط حسابدار پرداخت شد و در انتظار نوبت دهی است`;
                     break;
                 case 'دریافت شد':
                     logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط انباردار دریافت شد`;
@@ -177,7 +180,12 @@ exports.updateMultipleOrderStatus = async (req, res) => {
                     logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" دریافت نشد`;
                     break;
                 case 'نوبت داده شد':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط پذیرش نوبت‌گذاری شد`;
+                    let appointmentShamsi = 'نامشخص';
+                    if (convertedAppointmentDate) {
+                        appointmentShamsi = moment(convertedAppointmentDate, 'YYYY-MM-DD').format('jYYYY/jMM/jDD');
+                    }
+                    const appointmentTime = appointment_time || 'نامشخص';
+                    logMessage = `برای سفارشات${piecesText} مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi}" ساعت "${appointmentTime}" نوبت‌گذاری شد`;
                     break;
                 case 'انصراف مشتری':
                     logMessage = `مشتری "${customerName}" از ادامه‌ی سفارشات ${piecesText} به دلیل "${description || 'بدون توضیحات'}" انصراف داد`;
@@ -186,7 +194,7 @@ exports.updateMultipleOrderStatus = async (req, res) => {
                     logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" تحویل داده شد`;
                     break;
                 case 'تحویل نشد':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" تحویل نشد`;
+                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" تحویل داده نشد`;
                     break;
                 default:
                     logMessage = `وضعیت سفارشات ${piecesText} مربوط به مشتری "${customerName}" به "${new_status}" تغییر یافت`;

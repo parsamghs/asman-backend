@@ -230,13 +230,13 @@ WHERE id = $10;`;
     if (newStatus) {
       switch (newStatus) {
         case 'در انتظار تائید حسابداری':
-          logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" توسط شرکت تأیید شد`;
+          logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}"  توسط شرکت تأیید شد و در انتظار تائید حسابداری است`;
           break;
         case 'لغو توسط شرکت':
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" به دلیل "${newDescription || 'نداشتن توضیحات'}" توسط شرکت لغو شد`;
           break;
         case 'در انتظار دریافت':
-          logMessage = `سفارش "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مشتری "${customerName}" توسط حسابداری پرداخت گردید`;
+          logMessage = `سفارش "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مشتری "${customerName}" توسط حسابداری پرداخت شد و در انتظار دریافت است`;
           break;
         case 'عدم پرداخت حسابداری':
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" به دلیل "${newDescription || 'نداشتن توضیحات'}" توسط حسابدار پرداخت نشد`;
@@ -251,7 +251,15 @@ WHERE id = $10;`;
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" به دلیل "${newDescription || 'نداشتن توضیحات'}" دریافت نگردید`;
           break;
         case 'نوبت داده شد':
-          logMessage = `برای سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}"، نوبت‌ گذاری انجام شد`;
+          let appointmentShamsi = null;
+          if (newAppointmentDate) {
+            appointmentShamsi = moment(newAppointmentDate, 'YYYY-MM-DD').format('jYYYY/jMM/jDD');
+          }
+          const appointmentTime = newAppointmentTime || 'نامشخص';
+          logMessage = `برای سفارش قطعه "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi}" ساعت "${appointmentTime}" نوبت گذاری شد`;
+          break;
+
+          logMessage = `برای سفارش قطعه "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi || 'نامشخص'}" نوبت گذاری شد`;
           break;
         case 'انصراف مشتری':
           logMessage = `مشتری "${customerName}" از ادامه‌ی سفارش "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" به دلیل "${newDescription || 'نداشتن توضیحات'}" انصراف داد`;
