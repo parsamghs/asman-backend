@@ -21,49 +21,47 @@ exports.getAllOrders = async (req, res) => {
       'حذف شده'
     ];
 
-    const criticalStatuses = [
-      'در انتظار تائید شرکت',
-      'در انتظار تائید حسابداری',
-      'در انتظار دریافت',
-      'در انتظار نوبت دهی',
-      'دریافت شد',
-      'نوبت داده شد'
-    ];
-
 
     const dealerId = req.user.dealer_id;
 
     const totalCountResult = await pool.query(`
-      SELECT COUNT(DISTINCT customers.id) AS total
-      FROM customers
-      LEFT JOIN receptions ON receptions.customer_id = customers.id
-      LEFT JOIN orders ON orders.reception_id = receptions.id
-      WHERE customers.dealer_id = $2
-      AND (
-        $1::text IS NULL
-        OR ($1 = 'لغو شده ها' AND orders.status = ANY($3))
-        OR ($1 = 'بحرانی ها' AND orders.estimated_arrival_days <= 0 AND orders.status = ANY($4))
-        OR ($1 NOT IN ('لغو شده ها', 'بحرانی ها') AND orders.status = $1))
-    `, [status, dealerId, canceledStatuses, criticalStatuses]);
+  SELECT COUNT(DISTINCT customers.id) AS total
+  FROM customers
+  LEFT JOIN receptions ON receptions.customer_id = customers.id
+  LEFT JOIN orders ON orders.reception_id = receptions.id
+  WHERE customers.dealer_id = $2
+  AND (
+    $1::text IS NULL
+    OR ($1 = 'لغو شده ها' AND orders.status = ANY($3))
+    OR ($1 = 'بحرانی ها' AND orders.estimated_arrival_days <= 0)
+    OR ($1 NOT IN ('لغو شده ها', 'بحرانی ها') AND orders.status = $1)
+  )
+`, [status, dealerId, canceledStatuses]);
+
     const totalCustomers = parseInt(totalCountResult.rows[0].total);
     const totalPages = Math.ceil(totalCustomers / limit);
 
 
     const customerIdsResult = await pool.query(`
-      SELECT DISTINCT customers.id
-      FROM customers
-      LEFT JOIN receptions ON receptions.customer_id = customers.id
-      LEFT JOIN orders ON orders.reception_id = receptions.id
-      WHERE customers.dealer_id = $2
-      AND (
-        $1::text IS NULL
-        OR ($1 = 'لغو شده ها' AND orders.status = ANY($3))
-        OR ($1 = 'بحرانی ها' AND orders.estimated_arrival_days <= 0 AND orders.status = ANY($4)))
-        ORDER BY customers.id
-        LIMIT $5 OFFSET $6
-`, [status, dealerId, canceledStatuses, criticalStatuses, limit, offset]);
+  SELECT DISTINCT customers.id
+    FROM customers
+    LEFT JOIN receptions ON receptions.customer_id = customers.id
+    LEFT JOIN orders ON orders.reception_id = receptions.id
+    WHERE customers.dealer_id = $2
+    AND (
+      $1::text IS NULL
+      OR ($1 = 'لغو شده ها' AND orders.status = ANY($3))
+      OR ($1 = 'بحرانی ها' AND orders.estimated_arrival_days <= 0)
+      OR ($1 NOT IN ('لغو شده ها', 'بحرانی ها') AND orders.status = $1)
+    )
+    ORDER BY customers.id
+    LIMIT $4 OFFSET $5
+`, [status, dealerId, canceledStatuses, limit, offset]); // ✅
+
 
     const customerIds = customerIdsResult.rows.map(row => row.id);
+
+
 
     if (customerIds.length === 0) {
       return res.json({
@@ -112,9 +110,11 @@ exports.getAllOrders = async (req, res) => {
         AND (
           $3::text IS NULL
           OR ($3 = 'لغو شده ها' AND orders.status = ANY($4))
-          OR ($3 = 'بحرانی ها' AND orders.estimated_arrival_days <= 0 AND orders.status = ANY($5)))
+          OR ($3 = 'بحرانی ها' AND orders.estimated_arrival_days <= 0)
+          OR ($3 NOT IN ('لغو شده ها', 'بحرانی ها') AND orders.status = $3)
+        )
       ORDER BY customers.id, receptions.id, orders.id
-    `, [customerIds, dealerId, status, canceledStatuses, criticalStatuses]);
+    `, [customerIds, dealerId, status, canceledStatuses]);
 
     const groupedByCustomer = {};
 

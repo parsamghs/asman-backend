@@ -23,15 +23,6 @@ exports.getOrderscounts = async (req, res) => {
             'عدم دریافت'
         ];
 
-        const criticalStatuses = [
-            'در انتظار تائید شرکت',
-            'در انتظار تائید حسابداری',
-            'در انتظار دریافت',
-            'در انتظار نوبت دهی',
-            'دریافت شد',
-            'نوبت داده شد'
-        ];
-
         const statusCountsQuery = `
             SELECT orders.status, COUNT(*) AS count
             FROM orders
@@ -56,11 +47,9 @@ exports.getOrderscounts = async (req, res) => {
             FROM orders
             JOIN receptions ON orders.reception_id = receptions.id
             JOIN customers ON receptions.customer_id = customers.id
-            WHERE orders.estimated_arrival_days <= 0
-              AND orders.status = ANY($2)
-              AND customers.dealer_id = $1
+            WHERE orders.estimated_arrival_days <= 0 AND customers.dealer_id = $1
         `;
-        const criticalCountResult = await pool.query(criticalCountQuery, [dealerId, criticalStatuses]);
+        const criticalCountResult = await pool.query(criticalCountQuery, [dealerId]);
 
         const stats = {
             'در انتظار تائید شرکت': 0,
