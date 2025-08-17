@@ -12,9 +12,15 @@ exports.addPiecesToExistingReception = async (req, res) => {
       return res.status(400).json({ message: 'شناسه پذیرش معتبر نیست.' });
     }
 
-    const { orders } = req.body;
+    const { orders, order_type } = req.body;
     if (!Array.isArray(orders) || orders.length === 0) {
       return res.status(400).json({ message: 'لیست سفارش‌ها خالی یا معتبر نیست.' });
+    }
+
+    if (!['real_order', 'pre_order'].includes(order_type)) {
+      return res.status(400).json({
+        message: 'پارامتر order_type نامعتبر است. باید یکی از این موارد باشد: real_order، pre_order'
+      });
     }
 
     const client = await pool.connect();
@@ -71,14 +77,21 @@ exports.addPiecesToExistingReception = async (req, res) => {
           });
         }
 
-        let status = order.order_channel === 'بازار آزاد'
-          ? 'در انتظار تائید حسابداری'
-          : 'در انتظار تائید شرکت';
+        let status;
+        if (order_type === 'pre_order') {
+          status = 'پیش درخواست';
+        } else {
+          status = order.order_channel === 'بازار آزاد'
+            ? 'در انتظار تائید حسابداری'
+            : 'در انتظار تائید شرکت';
+        }
+
 
         const iranTime = momentTZ().tz('Asia/Tehran').format('HH:mm:ss');
         const todayJalali = momentTZ().tz('Asia/Tehran').format('jYYYY/jMM/jDD');
         const orderDateTime = moment(`${todayJalali} ${iranTime}`, 'jYYYY/jMM/jDD HH:mm:ss');
         const orderDateFormatted = orderDateTime.format('jYYYY/jMM/jDD HH:mm:ss');
+        order.accounting_confirmation = order.accounting_confirmation ?? true;
 
         let estimatedArrivalDate = null;
         if (order.estimated_arrival_days != null) {
@@ -99,17 +112,21 @@ exports.addPiecesToExistingReception = async (req, res) => {
           }
         }
 
+        if (typeof order.accounting_confirmation !== 'boolean') {
+          return res.status(400).json({ message: `مقدار accounting_confirmation باید بولین باشد.` });
+        }
+
         await client.query(
           `INSERT INTO orders (
             customer_id, reception_id, order_number, piece_name, part_id, number_of_pieces, 
             order_channel, market_name, market_phone, order_date, delivery_date, 
             estimated_arrival_days, estimated_arrival_date, status, all_description,
-            car_name
+            car_name , accounting_confirmation
           )
           VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
-            $12, $13, $14, $15, $16
+            $12, $13, $14, $15, $16, $17
           )`,
           [
             customer_id,
@@ -127,15 +144,16 @@ exports.addPiecesToExistingReception = async (req, res) => {
             estimatedArrivalDate,
             status,
             order.all_description || null,
-            existingCarName
+            existingCarName,
+            order.accounting_confirmation
           ]
         );
       }
 
       await createLog(
         req.user.id,
-        'افزودن سفارش به پذیرش',
-        `سفارش جدید به پذیرش شماره "${reception_number}" مشتری "${customerName}" اضافه شد.`
+        order_type === 'pre_order' ? 'افزودن پیش‌درخواست به پذیرش' : 'افزودن سفارش به پذیرش',
+        `${order_type === 'pre_order' ? 'پیش‌درخواست جدید' : 'سفارش جدید'} به پذیرش شماره "${reception_number}" مشتری "${customerName}" اضافه شد.`
       );
 
       await client.query('COMMIT');

@@ -12,7 +12,7 @@ moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 exports.addOrder = async (req, res) => {
   const client = await pool.connect();
   try {
-    const { customer_name, phone_number, reception_number, reception_date, car_status, car_name, chassis_number, orders } = req.body;
+    const { customer_name, phone_number, reception_number, reception_date, car_status, car_name, chassis_number, orders, order_type } = req.body;
 
     if (!Array.isArray(orders) || orders.length === 0) {
       return res.status(400).json({ message: 'لیست سفارش‌ها نمی‌تواند خالی باشد.' });
@@ -80,9 +80,17 @@ exports.addOrder = async (req, res) => {
         }
       }
 
-      order.status = order.order_channel === 'بازار آزاد'
-        ? 'در انتظار تائید حسابداری'
-        : 'در انتظار تائید شرکت';
+      if (!['real_order', 'pre_order'].includes(order_type)) {
+        return res.status(400).json({ message: 'پارامتر order_type نامعتبر است. باید یکی از این موارد باشد: real_order، pre_order' });
+      }
+
+      if (order_type === 'pre_order') {
+        order.status = 'پیش درخواست';
+      } else {
+        order.status = order.order_channel === 'بازار آزاد'
+          ? 'در انتظار تائید حسابداری'
+          : 'در انتظار تائید شرکت';
+      }
     }
 
     await client.query('BEGIN');
@@ -163,6 +171,8 @@ exports.addOrder = async (req, res) => {
       const todayJalali = moment().tz('Asia/Tehran').format('jYYYY/jMM/jDD');
       const orderDateTime = moment(`${todayJalali} ${iranTime}`, 'jYYYY/jMM/jDD HH:mm:ss');
       const orderDateFormatted = orderDateTime.format('YYYY-MM-DD HH:mm:ss');
+      order.accounting_confirmation = order.accounting_confirmation ?? true;
+
 
       const estimatedArrivalDate = orderDateTime.clone().add(order.estimated_arrival_days, 'days').format('YYYY-MM-DD');
 
@@ -174,6 +184,10 @@ exports.addOrder = async (req, res) => {
         }
       }
 
+      if (typeof order.accounting_confirmation !== 'boolean') {
+        return res.status(400).json({ message: `مقدار accounting_confirmation باید بولین باشد.` });
+      }
+
       const insertOrder = await client.query(
         `INSERT INTO orders (
           customer_id, piece_name, part_id, number_of_pieces,
@@ -181,11 +195,11 @@ exports.addOrder = async (req, res) => {
           order_date, estimated_arrival_days,
           estimated_arrival_date, all_description,
           reception_id, status, order_number,
-          car_name
+          car_name, accounting_confirmation
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7,
           $8, $9, $10, $11, $12, $13,
-          $14, $15
+          $14, $15, $16
         ) RETURNING id`,
         [
           customerId,
@@ -202,15 +216,16 @@ exports.addOrder = async (req, res) => {
           receptionId,
           order.status,
           order.order_number || null,
-          car_name
+          car_name,
+          order.accounting_confirmation
         ]
       );
     }
 
     await createLog(
       req.user.id,
-      'ثبت سفارش جدید',
-      `سفارش جدیدی ثبت شد.`
+      order_type === 'pre_order' ? 'ثبت پیش‌ درخواست' : 'ثبت سفارش جدید',
+      `${order_type === 'pre_order' ? 'پیش درخواست جدیدی' : 'سفارش جدیدی'} ثبت شد`
     );
 
     await client.query('COMMIT');
