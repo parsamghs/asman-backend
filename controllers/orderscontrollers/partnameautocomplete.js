@@ -3,13 +3,14 @@ const redisClient = require('../../config/redisClient');
 
 exports.suggestPartsByName = async (req, res) => {
   const q = req.params.partname_id;
+  const dealerId = req.user.dealer_id;
 
   const plainQuery = q?.trim().replace(/\*/g, '');
   if (!plainQuery || plainQuery.length < 1) {
     return res.status(400).json({ message: 'حداقل 1 کاراکتر معتبر برای جستجو لازم است.' });
   }
 
-  const cacheKey = `suggest_lost_name:${q.trim()}`;
+  const cacheKey = `suggest_lost_name:${dealerId}:${q.trim()}`;
 
   try {
     const cachedResult = await redisClient.get(cacheKey);
@@ -28,14 +29,12 @@ exports.suggestPartsByName = async (req, res) => {
       const clean = word.replace(/\*/g, '');
       if (clean.length === 0) return;
 
-      if (word.includes('*')) {
-        conditions.push(`piece_name ILIKE $${idx + 1}`);
-        values.push(`%${clean}%`);
-      } else {
-        conditions.push(`piece_name ILIKE $${idx + 1}`);
-        values.push(`%${clean}%`);
-      }
+      conditions.push(`piece_name ILIKE $${idx + 1}`);
+      values.push(`%${clean}%`);
     });
+
+    conditions.push(`dealer_id = $${values.length + 1}`);
+    values.push(dealerId);
 
     const query = `
       SELECT DISTINCT part_id, piece_name

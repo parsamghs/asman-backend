@@ -27,13 +27,15 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'رمز عبور اشتباه است' });
     }
 
+    let category = null;
+
     if (user.role !== 'ادمین') {
       if (!user.dealer_id) {
         return res.status(403).json({ message: 'کاربر به نمایندگی اختصاص داده نشده است.' });
       }
 
       const subResult = await pool.query(
-        'SELECT remaining_subscription FROM dealers WHERE id = $1',
+        'SELECT remaining_subscription, category FROM dealers WHERE id = $1',
         [user.dealer_id]
       );
 
@@ -41,8 +43,9 @@ exports.login = async (req, res) => {
         return res.status(404).json({ message: 'نمایندگی یافت نشد.' });
       }
 
-      const remainingSubscription = subResult.rows[0].remaining_subscription;
+      category = subResult.rows[0].category;
 
+      const remainingSubscription = subResult.rows[0].remaining_subscription;
       if (remainingSubscription <= 0) {
         return res.status(403).json({ message: 'اشتراک نمایندگی شما به پایان رسیده است. لطفاً تمدید کنید.' });
       }
@@ -52,7 +55,8 @@ exports.login = async (req, res) => {
       {
         id: user.id,
         role: user.role,
-        dealer_id: user.dealer_id || null
+        dealer_id: user.dealer_id || null,
+        category
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }

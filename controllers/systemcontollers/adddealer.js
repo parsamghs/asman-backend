@@ -9,6 +9,7 @@ exports.addDealerAndUser = async (req, res) => {
       dealer_code,
       dealer_name,
       remaining_subscription,
+      category,
       user: {
         name,
         last_name,
@@ -20,7 +21,7 @@ exports.addDealerAndUser = async (req, res) => {
     } = req.body;
 
     if (
-      !dealer_code || !dealer_name || !remaining_subscription ||
+      !dealer_code || !dealer_name || !remaining_subscription || !category ||
       !name || !last_name || !code_meli || !password || !role
     ) {
       return res.status(400).json({ message: 'تمام فیلدها الزامی هستند.' });
@@ -54,9 +55,9 @@ exports.addDealerAndUser = async (req, res) => {
     await client.query('BEGIN');
 
     const dealerRes = await client.query(
-      `INSERT INTO dealers (dealer_code, dealer_name, remaining_subscription)
-       VALUES ($1, $2, $3) RETURNING id`,
-      [dealer_code, dealer_name, remaining_subscription]
+      `INSERT INTO dealers (dealer_code, dealer_name, remaining_subscription, category)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [dealer_code, dealer_name, remaining_subscription, category]
     );
 
     const dealerId = dealerRes.rows[0].id;
