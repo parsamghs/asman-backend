@@ -1,8 +1,15 @@
 const pool = require('../../db');
+const moment = require('moment-jalaali');
+moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 exports.getOrderscounts = async (req, res) => {
     try {
         const dealerId = req.user.dealer_id;
+
+        let { start_date, end_date } = req.query;
+
+        if (start_date) start_date = moment(start_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
+        if (end_date) end_date = moment(end_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
 
         const statuses = [
             'در انتظار تائید شرکت',
@@ -32,35 +39,73 @@ exports.getOrderscounts = async (req, res) => {
             'نوبت داده شد'
         ];
 
+        let dateCondition1 = '';
+        const statusCountsParams = [statuses, dealerId];
+        if (start_date) {
+            statusCountsParams.push(start_date);
+            dateCondition1 += ` AND orders.order_date >= $${statusCountsParams.length}`;
+        }
+        if (end_date) {
+            statusCountsParams.push(end_date);
+            dateCondition1 += ` AND orders.order_date <= $${statusCountsParams.length}`;
+        }
+
         const statusCountsQuery = `
             SELECT orders.status, COUNT(*) AS count
             FROM orders
             JOIN receptions ON orders.reception_id = receptions.id
             JOIN customers ON receptions.customer_id = customers.id
-            WHERE orders.status = ANY($1) AND customers.dealer_id = $2
+            WHERE orders.status = ANY($1)
+              AND customers.dealer_id = $2
+              ${dateCondition1}
             GROUP BY orders.status
         `;
-        const statusCountsResult = await pool.query(statusCountsQuery, [statuses, dealerId]);
+        const statusCountsResult = await pool.query(statusCountsQuery, statusCountsParams);
+
+        let dateCondition2 = '';
+        const canceledCountParams = [canceledStatuses, dealerId];
+        if (start_date) {
+            canceledCountParams.push(start_date);
+            dateCondition2 += ` AND orders.order_date >= $${canceledCountParams.length}`;
+        }
+        if (end_date) {
+            canceledCountParams.push(end_date);
+            dateCondition2 += ` AND orders.order_date <= $${canceledCountParams.length}`;
+        }
 
         const canceledCountQuery = `
             SELECT COUNT(*) AS canceled_count
             FROM orders
             JOIN receptions ON orders.reception_id = receptions.id
             JOIN customers ON receptions.customer_id = customers.id
-            WHERE orders.status = ANY($1) AND customers.dealer_id = $2
+            WHERE orders.status = ANY($1)
+              AND customers.dealer_id = $2
+              ${dateCondition2}
         `;
-        const canceledCountResult = await pool.query(canceledCountQuery, [canceledStatuses, dealerId]);
+        const canceledCountResult = await pool.query(canceledCountQuery, canceledCountParams);
+
+        let dateCondition3 = '';
+        const criticalCountParams = [dealerId, criticalStatuses];
+        if (start_date) {
+            criticalCountParams.push(start_date);
+            dateCondition3 += ` AND orders.order_date >= $${criticalCountParams.length}`;
+        }
+        if (end_date) {
+            criticalCountParams.push(end_date);
+            dateCondition3 += ` AND orders.order_date <= $${criticalCountParams.length}`;
+        }
 
         const criticalCountQuery = `
             SELECT COUNT(*) AS critical_count
             FROM orders
             JOIN receptions ON orders.reception_id = receptions.id
             JOIN customers ON receptions.customer_id = customers.id
-            WHERE orders.estimated_arrival_days <= 0 
+            WHERE orders.estimated_arrival_days <= 0
               AND orders.status = ANY($2)
               AND customers.dealer_id = $1
+              ${dateCondition3}
         `;
-        const criticalCountResult = await pool.query(criticalCountQuery, [dealerId, criticalStatuses]);
+        const criticalCountResult = await pool.query(criticalCountQuery, criticalCountParams);
 
         const stats = {
             'در انتظار تائید شرکت': 0,
