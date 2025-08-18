@@ -5,15 +5,15 @@ moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 exports.getOrderscounts = async (req, res) => {
     try {
         const dealerId = req.user.dealer_id;
-
         let { start_date, end_date } = req.query;
 
         if (start_date) start_date = moment(start_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
         if (end_date) end_date = moment(end_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
 
+        const specialStatuses = ["در انتظار تائید حسابداری", "پیش درخواست"];
         const statuses = [
             'در انتظار تائید شرکت',
-            'در انتظار تائید حسابداری',
+            ...specialStatuses,
             'در انتظار دریافت',
             'دریافت شد',
             'در انتظار نوبت دهی',
@@ -122,6 +122,11 @@ exports.getOrderscounts = async (req, res) => {
         statusCountsResult.rows.forEach(row => {
             stats[row.status] = parseInt(row.count);
         });
+
+        if (stats['پیش درخواست']) {
+            stats['در انتظار تائید حسابداری'] += stats['پیش درخواست'];
+            delete stats['پیش درخواست'];
+        }
 
         res.json({ stats });
 
