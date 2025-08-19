@@ -115,7 +115,8 @@ exports.getAllOrders = async (req, res) => {
     orders.appointment_date,
     orders.appointment_time,
     orders.final_order_number,
-    orders.accounting_confirmation 
+    orders.accounting_confirmation,
+    orders.car_name 
   FROM customers
   LEFT JOIN receptions ON receptions.customer_id = customers.id
   LEFT JOIN orders ON orders.reception_id = receptions.id
@@ -183,6 +184,7 @@ exports.getAllOrders = async (req, res) => {
         description: row.description,
         all_description: row.all_description,
         accounting_confirmation: row.accounting_confirmation,
+        car_name: row.car_name,
       });
     });
 
