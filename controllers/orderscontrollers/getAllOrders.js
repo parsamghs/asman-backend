@@ -97,7 +97,7 @@ exports.getAllOrders = async (req, res) => {
     receptions.reception_number,
     receptions.car_status,
     receptions.chassis_number,
-    reception.car_name,
+    receptions.car_name,
     orders.id AS order_id,
     orders.order_number,
     orders.order_date,
