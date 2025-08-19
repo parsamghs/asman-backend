@@ -138,7 +138,8 @@ exports.searchOrders = async (req, res) => {
                 appointment_date: row.appointment_date,
                 appointment_time: row.appointment_time,
                 description: row.description,
-                all_description: row.all_description
+                all_description: row.all_description,
+                car_name: row.car_name
             });
         }
 
