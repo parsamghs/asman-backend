@@ -97,7 +97,6 @@ exports.getAllOrders = async (req, res) => {
     receptions.reception_number,
     receptions.car_status,
     receptions.chassis_number,
-    receptions.car_name,
     orders.id AS order_id,
     orders.order_number,
     orders.order_date,
@@ -157,7 +156,6 @@ exports.getAllOrders = async (req, res) => {
           reception_number: row.reception_number,
           car_status: row.car_status,
           chassis_number: row.chassis_number,
-          car_name:row.car_name,
           settlement_status: null,
           orders: []
         };
