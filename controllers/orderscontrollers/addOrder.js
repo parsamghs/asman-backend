@@ -1,6 +1,8 @@
 const pool = require('../../db');
 const createLog = require('../logcontrollers/createlog');
 const { CONSTANTS } = require('../../utils/constants');
+const { insertPartIfNotExists } = require('../../helpers/partshelper');
+const { insertCarIfNotExists } = require('../../helpers/carshelper');
 const {
   validateJalaliDate,
   validateWithRegex
@@ -66,7 +68,7 @@ exports.addOrder = async (req, res) => {
         }
       }
 
-      if (!Number.isInteger(order.estimated_arrival_days) || order.estimated_arrival_days < -10) {
+      if (!Number.isInteger(order.estimated_arrival_days) || order.estimated_arrival_days < 0) {
         return res.status(400).json({ message: `estimated_arrival_days باید عدد صحیح غیرمنفی باشد.` });
       }
 
@@ -187,6 +189,9 @@ exports.addOrder = async (req, res) => {
       if (typeof order.accounting_confirmation !== 'boolean') {
         return res.status(400).json({ message: `مقدار accounting_confirmation باید بولین باشد.` });
       }
+    
+      await insertPartIfNotExists(client, req.user.category, order.part_id, order.piece_name);
+      await insertCarIfNotExists(client, req.user.category, car_name);
 
       const insertOrder = await client.query(
         `INSERT INTO orders (

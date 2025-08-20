@@ -1,8 +1,14 @@
 const pool = require('../../db');
 const { validateWithRegex } = require('../../utils/validation');
+const { insertPartIfNotExists } = require('../../helpers/partshelper');
 
 exports.addPart = async (req, res) => {
     const { technical_code, part_name } = req.body;
+    const category = req.user?.category;
+
+    if (!category) {
+        return res.status(400).json({ message: 'دسته‌بندی کاربر نامعتبر است.' });
+    }
 
     let result = validateWithRegex('technical_code', technical_code);
     if (!result.isValid) {
@@ -14,30 +20,20 @@ exports.addPart = async (req, res) => {
         return res.status(400).json({ message: `نام قطعه: ${result.message}` });
     }
 
-    if (!result.isValid) {
-        return res.status(400).json({ message: `کد قطعه: ${result.message || 'نامعتبر است.'}` });
-    }
-
+    const client = await pool.connect();
     try {
-        const check = await pool.query(
-            'SELECT * FROM parts_id WHERE technical_code = $1',
-            [technical_code]
-        );
+        await client.query('BEGIN');
 
-        if (check.rows.length > 0) {
-            return res.status(409).json({ message: 'این کد قطعه قبلاً ثبت شده است.' });
-        }
+        await insertPartIfNotExists(client, category, technical_code, part_name);
 
-        await pool.query(
-            'INSERT INTO parts_id (technical_code, part_name) VALUES ($1, $2)',
-            [technical_code, part_name]
-        );
-
-        return res.status(201).json({ message: 'قطعه با موفقیت اضافه شد.' });
+        await client.query('COMMIT');
+        return res.status(201).json({ message: `قطعه با موفقیت در دسته "${category}" اضافه شد.` });
 
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('❌ خطا در افزودن قطعه:', err);
         return res.status(500).json({ message: 'خطای سرور' });
-
+    } finally {
+        client.release();
     }
 };

@@ -1,6 +1,8 @@
 const pool = require('../../db');
 const createLog = require('../logcontrollers/createlog');
 const { CONSTANTS } = require('../../utils/constants');
+const { insertPartIfNotExists } = require('../../helpers/partshelper');
+const { insertCarIfNotExists } = require('../../helpers/carshelper');
 const moment = require('moment-jalaali');
 const momentTZ = require('moment-timezone');
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
@@ -86,7 +88,6 @@ exports.addPiecesToExistingReception = async (req, res) => {
             : 'در انتظار تائید شرکت';
         }
 
-
         const iranTime = momentTZ().tz('Asia/Tehran').format('HH:mm:ss');
         const todayJalali = momentTZ().tz('Asia/Tehran').format('jYYYY/jMM/jDD');
         const orderDateTime = moment(`${todayJalali} ${iranTime}`, 'jYYYY/jMM/jDD HH:mm:ss');
@@ -115,6 +116,8 @@ exports.addPiecesToExistingReception = async (req, res) => {
         if (typeof order.accounting_confirmation !== 'boolean') {
           return res.status(400).json({ message: `مقدار accounting_confirmation باید بولین باشد.` });
         }
+
+        await insertPartIfNotExists(client, req.user.category, order.part_id, order.piece_name);
 
         await client.query(
           `INSERT INTO orders (

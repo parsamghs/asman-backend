@@ -9,14 +9,17 @@ exports.suggestParts = async (req, res) => {
   }
 
   const category = req.user.category;
-  let tableName;
 
-  if (category === 'ایران خودرو') {
-    tableName = 'irankhodro_parts_id';
-  } else if (category === 'مدیران خودرو') {
-    tableName = 'parts_id';
-  } else {
-    return res.status(400).json({ message: 'دسته‌بندی نمایندگی معتبر نیست.' });
+  const categoryTableMap = {
+    'ایران خودرو': 'irankhodro_parts_id',
+    'مدیران خودرو': 'mvm_parts_id',
+    'تویوتا': 'toyota_parts_id'
+  };
+
+  const tableName = categoryTableMap[category];
+
+  if (!tableName) {
+    return res.status(400).json({ message: `دسته‌بندی نمایندگی معتبر نیست: ${category}` });
   }
 
   const cacheKey = `suggest:${category}:${q.trim()}`;

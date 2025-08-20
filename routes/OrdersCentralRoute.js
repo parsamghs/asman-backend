@@ -29,8 +29,6 @@ router.use('/get-cars', require('./OrdersRoutes/GetCarsRoute'));
 
 router.use('/bulkedit', require('./OrdersRoutes/BulkUpdateOrdersRoute'));
 
-router.use('/getcars', require('./OrdersRoutes/GetAllCarsRoute'));
-
 router.use('/getlostorders', require('./OrdersRoutes/GetLostOrdersRoute.js'));
 
 router.use('/addlostorder', require('./OrdersRoutes/AddLostOrderRoute'));

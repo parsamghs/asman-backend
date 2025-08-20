@@ -3,13 +3,16 @@ const pool = require('../../db');
 exports.getAllCars = async (req, res) => {
   try {
     const category = req.user.category;
-    let tableName;
 
-    if (category === 'ایران خودرو') {
-      tableName = 'irankhodro_cars';
-    } else if (category === 'مدیران خودرو') {
-      tableName = 'mvm_cars';
-    } else {
+    const categoryTableMap = {
+      'ایران خودرو': 'irankhodro_cars',
+      'مدیران خودرو': 'mvm_cars',
+      'تویوتا': 'toyota_cars'
+    };
+
+    const tableName = categoryTableMap[category];
+
+    if (!tableName) {
       return res.status(400).json({ message: 'دسته‌بندی نمایندگی معتبر نیست.' });
     }
 
