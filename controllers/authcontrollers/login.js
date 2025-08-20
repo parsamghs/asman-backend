@@ -28,6 +28,7 @@ exports.login = async (req, res) => {
     }
 
     let category = null;
+    let dealerName = null;
 
     if (user.role !== 'ادمین') {
       if (!user.dealer_id) {
@@ -35,7 +36,7 @@ exports.login = async (req, res) => {
       }
 
       const subResult = await pool.query(
-        'SELECT remaining_subscription, category FROM dealers WHERE id = $1',
+        'SELECT remaining_subscription, category, dealer_name FROM dealers WHERE id = $1',
         [user.dealer_id]
       );
 
@@ -44,18 +45,21 @@ exports.login = async (req, res) => {
       }
 
       category = subResult.rows[0].category;
+      dealerName = subResult.rows[0].dealer_name;
 
       const remainingSubscription = subResult.rows[0].remaining_subscription;
       if (remainingSubscription <= 0) {
         return res.status(403).json({ message: 'اشتراک نمایندگی شما به پایان رسیده است. لطفاً تمدید کنید.' });
       }
     }
+    
 
     const token = jwt.sign(
       {
         id: user.id,
         role: user.role,
         dealer_id: user.dealer_id || null,
+        dealer_name: dealerName,
         category
       },
       process.env.JWT_SECRET,
