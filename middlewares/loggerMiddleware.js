@@ -30,22 +30,25 @@ function requestLogger(req, res, next) {
     const dealerId = req.user?.dealer_id || 'Unknown';
     const dealerName = req.user?.dealer_name || 'Unknown';
 
+    let location = 'Unknown';
+
     if (
       ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('172.') ||
       ip.startsWith('127.') || ip.startsWith('100.') || ip === '::1'
     ) {
       logger.info(
-        `${req.method} ${req.originalUrl} ${res.statusCode} - Dealer: ${dealerId} - ${dealerName}`
+        `${req.method} ${req.originalUrl} ${res.statusCode} - Location: ${location} - ${dealerName}`
       );
       return;
     }
 
-    const location = await logLocation(ip);
+    location = await logLocation(ip);
 
     logger.info(
-      `${req.method} ${req.originalUrl} ${res.statusCode} - IP ${ip} - Location: ${location} - Dealer: ${dealerId} - ${dealerName}`
+      `${req.method} ${req.originalUrl} ${res.statusCode} - Location: ${location} - ${dealerName}`
     );
   });
+
 
   next();
 }
