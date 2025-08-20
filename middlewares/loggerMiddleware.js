@@ -37,7 +37,7 @@ function requestLogger(req, res, next) {
       ip.startsWith('127.') || ip.startsWith('100.') || ip === '::1'
     ) {
       logger.info(
-        `${req.method} ${req.originalUrl} ${res.statusCode} - Location: ${location} - ${dealerName}`
+        `${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName}`
       );
       return;
     }
@@ -45,7 +45,7 @@ function requestLogger(req, res, next) {
     location = await logLocation(ip);
 
     logger.info(
-      `${req.method} ${req.originalUrl} ${res.statusCode} - Location: ${location} - ${dealerName}`
+      `${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName}`
     );
   });
 
