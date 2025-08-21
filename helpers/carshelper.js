@@ -1,8 +1,7 @@
 const categoryTableMap = {
   'ایران خودرو': 'irankhodro_cars',
   'مدیران خودرو': 'mvm_cars',
-  'تویوتا': 'toyota_cars',
-  'ماموت': 'mammut_cars'
+  'تویوتا': 'toyota_cars'
 };
 
 /**
