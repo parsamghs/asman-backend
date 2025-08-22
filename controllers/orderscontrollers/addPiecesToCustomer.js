@@ -15,14 +15,10 @@ exports.addPiecesToCustomer = async (req, res) => {
       return res.status(400).json({ message: 'شناسه مشتری معتبر نیست.' });
     }
 
-    const { reception_number, reception_date, car_status, car_name, chassis_number, orders, order_type } = req.body;
+    const { reception_number, reception_date, car_status, car_name, chassis_number, orders } = req.body;
 
     if (!reception_number || typeof reception_number !== 'string') {
       return res.status(400).json({ message: 'شماره پذیرش وارد نشده یا معتبر نیست.' });
-    }
-
-    if (!['real_order', 'pre_order'].includes(order_type)) {
-      return res.status(400).json({ message: 'پارامتر order_type نامعتبر است. باید یکی از این موارد باشد: real_order، pre_order' });
     }
 
     if (!reception_date || typeof reception_date !== 'string') {
@@ -99,14 +95,10 @@ exports.addPiecesToCustomer = async (req, res) => {
             return res.status(400).json({ message: `فیلدهای ضروری سفارش شماره ${index + 1} ناقص یا اشتباه است.` });
           }
 
-          let status;
-          if (order_type === 'pre_order') {
-            status = 'پیش درخواست';
-          } else {
-            status = order.order_channel === 'بازار آزاد'
-              ? 'در انتظار تائید حسابداری'
-              : 'در انتظار تائید شرکت';
-          }
+          let status = order.order_channel === 'بازار آزاد'
+            ? 'در انتظار تائید حسابداری'
+            : 'در انتظار تائید شرکت';
+
 
           const iranTime = moment().tz('Asia/Tehran').format('HH:mm:ss');
           const todayJalali = moment().tz('Asia/Tehran').format('jYYYY/jMM/jDD');
@@ -187,8 +179,8 @@ VALUES (
 
       await createLog(
         req.user.id,
-        order_type === 'pre_order' ? 'ثبت پیش‌ درخواست جدید' : 'ثبت پذیرش جدید',
-        `${order_type === 'pre_order' ? 'پیش درخواست جدید' : 'پذیرش جدید'} برای مشتری "${customerName}" ثبت شد.`
+        'ثبت پذیرش جدید',
+        `پذیرش جدید برای مشتری "${customerName}" ثبت شد.`
       );
 
       await client.query('COMMIT');

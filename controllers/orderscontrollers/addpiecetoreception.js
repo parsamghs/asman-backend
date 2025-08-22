@@ -14,15 +14,9 @@ exports.addPiecesToExistingReception = async (req, res) => {
       return res.status(400).json({ message: 'شناسه پذیرش معتبر نیست.' });
     }
 
-    const { orders, order_type } = req.body;
+    const { orders } = req.body;
     if (!Array.isArray(orders) || orders.length === 0) {
       return res.status(400).json({ message: 'لیست سفارش‌ها خالی یا معتبر نیست.' });
-    }
-
-    if (!['real_order', 'pre_order'].includes(order_type)) {
-      return res.status(400).json({
-        message: 'پارامتر order_type نامعتبر است. باید یکی از این موارد باشد: real_order، pre_order'
-      });
     }
 
     const client = await pool.connect();
@@ -79,14 +73,9 @@ exports.addPiecesToExistingReception = async (req, res) => {
           });
         }
 
-        let status;
-        if (order_type === 'pre_order') {
-          status = 'پیش درخواست';
-        } else {
-          status = order.order_channel === 'بازار آزاد'
-            ? 'در انتظار تائید حسابداری'
-            : 'در انتظار تائید شرکت';
-        }
+        let status = order.order_channel === 'بازار آزاد'
+          ? 'در انتظار تائید حسابداری'
+          : 'در انتظار تائید شرکت';
 
         const iranTime = momentTZ().tz('Asia/Tehran').format('HH:mm:ss');
         const todayJalali = momentTZ().tz('Asia/Tehran').format('jYYYY/jMM/jDD');
@@ -118,7 +107,8 @@ exports.addPiecesToExistingReception = async (req, res) => {
         }
 
         await insertPartIfNotExists(client, req.user.category, order.part_id, order.piece_name);
-
+        await insertCarIfNotExists(client, req.user.category, car_name);
+        
         await client.query(
           `INSERT INTO orders (
             customer_id, reception_id, order_number, piece_name, part_id, number_of_pieces, 
@@ -155,8 +145,8 @@ exports.addPiecesToExistingReception = async (req, res) => {
 
       await createLog(
         req.user.id,
-        order_type === 'pre_order' ? 'افزودن پیش‌درخواست به پذیرش' : 'افزودن سفارش به پذیرش',
-        `${order_type === 'pre_order' ? 'پیش‌درخواست جدید' : 'سفارش جدید'} به پذیرش شماره "${reception_number}" مشتری "${customerName}" اضافه شد.`
+        'افزودن سفارش به پذیرش',
+        `سفارش جدید به پذیرش شماره "${reception_number}" مشتری "${customerName}" اضافه شد.`
       );
 
       await client.query('COMMIT');
