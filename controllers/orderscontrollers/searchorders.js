@@ -36,6 +36,7 @@ exports.searchOrders = async (req, res) => {
             piece_name: 'o.piece_name',
             part_id: 'o.part_id',
             order_number: 'o.order_number',
+            car_name:'o.car_name',
             reception_number: 'r.reception_number',
             chassis_number:'r.chassis_number'
         };

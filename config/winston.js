@@ -8,12 +8,13 @@ const myFormat = printf(({ level, message, timestamp }) => {
 const logger = createLogger({
   level: 'info',
   format: combine(
-    colorize(),
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     myFormat
   ),
   transports: [
-    new transports.Console()
+    new transports.Console(),                 
+    new transports.File({ filename: '/var/log/myapp/out.log', level: 'info' }), 
+    new transports.File({ filename: '/var/log/myapp/error.log', level: 'error' }) 
   ],
 });
 
