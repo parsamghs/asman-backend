@@ -14,7 +14,8 @@ exports.suggestParts = async (req, res) => {
     'ایران خودرو': 'irankhodro_parts_id',
     'مدیران خودرو': 'mvm_parts_id',
     'تویوتا': 'toyota_parts_id',
-    'ماموت':'mammut_parts_id'
+    'ماموت':'mammut_parts_id',
+    'تست':'test_parts_id'
   };
 
   const tableName = categoryTableMap[category];

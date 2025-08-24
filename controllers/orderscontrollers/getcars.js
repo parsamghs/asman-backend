@@ -8,7 +8,8 @@ exports.getAllCars = async (req, res) => {
       'ایران خودرو': 'irankhodro_cars',
       'مدیران خودرو': 'mvm_cars',
       'تویوتا': 'toyota_cars',
-      'ماموت':'mammut_cars'
+      'ماموت':'mammut_cars',
+      'تست':'test_cars'
     };
 
     const tableName = categoryTableMap[category];
