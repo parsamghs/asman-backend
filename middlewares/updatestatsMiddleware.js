@@ -2,7 +2,8 @@ const pool = require('../db');
 
 const UpdateStats = async (req, res, next) => {
   try {
-    console.log("UpdateStats user.id:", req.user.id);
+    console.log("UpdateStats user.id:", req.user?.id);
+
     if (req.user && req.user.id) {
       await pool.query(
         `INSERT INTO users_stats (id, last_active)
@@ -17,6 +18,5 @@ const UpdateStats = async (req, res, next) => {
   }
   next();
 };
-console.log("UpdateStats user.id:", req.user?.id);
 
 module.exports = UpdateStats;
