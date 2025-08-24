@@ -2,8 +2,8 @@ const pool = require('../db');
 
 const UpdateStats = async (req, res, next) => {
   try {
+    console.log("UpdateStats user.id:", req.user.id);
     if (req.user && req.user.id) {
-      console.log("UpdateStats user.id:", req.user.id);
       await pool.query(
         `INSERT INTO users_stats (id, last_active)
          VALUES ($1, NOW())
