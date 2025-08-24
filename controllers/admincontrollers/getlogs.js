@@ -51,7 +51,7 @@ exports.getLogs = async (req, res) => {
         message: log.message,
         user_name: log.user_name,
         date: localMoment.format('jYYYY/jMM/jDD'),
-        time: localMoment.format('HH:mm:ss'),
+        time: localMoment.format('HH:mm'),
       };
     });
 

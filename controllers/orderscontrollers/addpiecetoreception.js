@@ -107,7 +107,6 @@ exports.addPiecesToExistingReception = async (req, res) => {
         }
 
         await insertPartIfNotExists(client, req.user.category, order.part_id, order.piece_name);
-        await insertCarIfNotExists(client, req.user.category, car_name);
         
         await client.query(
           `INSERT INTO orders (

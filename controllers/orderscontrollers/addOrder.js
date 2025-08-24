@@ -58,16 +58,6 @@ exports.addOrder = async (req, res) => {
         });
       }
 
-      if (order.order_channel === 'بازار آزاد') {
-        if (!order.market_name || order.market_name.trim() === '') {
-          return res.status(400).json({ message: `نام بازار باید وارد شود برای بازار آزاد.` });
-        }
-        result = validateWithRegex('phone', order.market_phone);
-        if (!result.isValid) {
-          return res.status(400).json({ message: `شماره بازار باید 11 رقم عددی باشد برای بازار آزاد.` });
-        }
-      }
-
       if (!Number.isInteger(order.estimated_arrival_days) || order.estimated_arrival_days < 0) {
         return res.status(400).json({ message: `estimated_arrival_days باید عدد صحیح غیرمنفی باشد.` });
       }
@@ -212,8 +202,8 @@ exports.addOrder = async (req, res) => {
           order.part_id,
           order.number_of_pieces,
           order.order_channel,
-          order.order_channel === 'بازار آزاد' ? order.market_name : null,
-          order.order_channel === 'بازار آزاد' ? order.market_phone : null,
+          order.market_name || null,
+          order.market_phone || null,
           orderDateFormatted,
           order.estimated_arrival_days,
           estimatedArrivalDate,

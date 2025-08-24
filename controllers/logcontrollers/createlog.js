@@ -1,4 +1,5 @@
 const pool = require('../../db');
+const moment = require('moment-timezone');
 
 /**
  * 
@@ -22,13 +23,16 @@ const createLog = async (userId, action, message) => {
       dealerId = dealer_id;
     }
 
+    const tehranTime = moment().tz("Asia/Tehran").format('YYYY-MM-DD HH:mm');
+
     await pool.query(
       `
-      INSERT INTO logs (user_id, action, message, user_name, dealer_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO logs (user_id, action, message, user_name, dealer_id, log_time)
+      VALUES ($1, $2, $3, $4, $5, $6)
       `,
-      [userId, action, message, userName, dealerId]
+      [userId, action, message, userName, dealerId, tehranTime]
     );
+
   } catch (err) {
     console.error('🔴 خطا در ثبت لاگ:', err);
   }
