@@ -9,7 +9,6 @@ async function decreaseEstimatedDays() {
     const result = await client.query(`
       UPDATE orders
       SET estimated_arrival_days = estimated_arrival_days - 1
-      WHERE estimated_arrival_days > 0
         AND status NOT IN (
           'لغو توسط شرکت',
           'عدم پرداخت حسابداری',
