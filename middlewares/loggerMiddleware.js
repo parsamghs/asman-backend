@@ -36,13 +36,16 @@ function requestLogger(req, res, next) {
       ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('172.') ||
       ip.startsWith('127.') || ip.startsWith('100.') || ip === '::1'
     ) {
-      location = 'Localhost (Test)';
-    } else {
-      location = await logLocation(ip);
+      logger.info(
+        `${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName}`
+      );
+      return;
     }
 
+    location = await logLocation(ip);
+
     logger.info(
-      `[${res.statusCode}] ${req.method} ${req.originalUrl} - ${dealerName} - IP: ${ip} - Location: ${location}`
+      `${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName}`
     );
   });
 
