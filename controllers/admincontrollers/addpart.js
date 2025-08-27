@@ -27,7 +27,7 @@ exports.addPart = async (req, res) => {
         await insertPartIfNotExists(client, category, technical_code, part_name);
 
         await client.query('COMMIT');
-        return res.status(201).json({ message: `قطعه با موفقیت در دسته "${category}" اضافه شد.` });
+        return res.status(201).json({ message: `قطعه با موفقیت اضافه شد.` });
 
     } catch (err) {
         await client.query('ROLLBACK');
