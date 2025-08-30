@@ -53,6 +53,7 @@ exports.searchOrders = async (req, res) => {
                     'o.piece_name',
                     'o.part_id',
                     'o.order_number',
+                    'o.car_name',
                     'r.reception_number',
                     'r.chassis_number'
                 ];
