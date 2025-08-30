@@ -19,11 +19,11 @@ exports.searchOrders = async (req, res) => {
     let paramIndex = 1;
 
     const specialStatusMap = {
-      "Cancellations": {
+      "لغو شده ها": {
         condition: () => `AND o.status = ANY($${paramIndex})`,
         values: () => cancellationStatuses
       },
-      "criticals": {
+      "بحرانی ها": {
         condition: () => `AND o.estimated_arrival_days <= 0`,
         values: () => null
       },
