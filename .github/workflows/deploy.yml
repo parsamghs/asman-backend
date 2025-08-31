@@ -16,11 +16,11 @@ jobs:
       - name: Run deploy script on VPS
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: 62.3.41.12
-          username: secureadmin
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS.USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-          port: 2288
+          port: ${{ secrets.VPS_PORT }}
           script: |
             cd /home/secureadmin/backend/backend--agent
             ./deploy.sh
