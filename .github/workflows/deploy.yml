@@ -20,7 +20,7 @@ jobs:
           username: secureadmin
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-          port: 2288
+          port: ${{ secrets.VPS_PORT }}
           script: |
             cd /home/secureadmin/backend/backend--agent
             ./deploy.sh
