@@ -17,7 +17,8 @@ exports.updateOrder = async (req, res) => {
               o.reception_id,
               o.piece_name,
               r.customer_id,
-              COALESCE(c.customer_name, 'نامشخص') AS customer_name
+              COALESCE(c.customer_name, 'نامشخص') AS customer_name,
+              c.phone_number
        FROM orders o
        LEFT JOIN receptions r ON o.reception_id = r.id
        LEFT JOIN customers c ON r.customer_id = c.id
@@ -30,7 +31,7 @@ exports.updateOrder = async (req, res) => {
       return res.status(404).json({ message: 'سفارشی با این شناسه یافت نشد.' });
     }
 
-    const { reception_id, customer_id, customer_name: customerName } = orderInfoRes.rows[0];
+    const { reception_id, customer_id, customer_name: customerName, phone_number: customerPhone } = orderInfoRes.rows[0];
 
     const { status, delivery_date, description, all_description, appointment_date, appointment_time } = req.body;
     const userRole = req.user?.role;
@@ -47,7 +48,6 @@ exports.updateOrder = async (req, res) => {
     let newCancellationDate = null;
     let newCancellationTime = null;
     let newFinalOrderNumber = null;
-
 
     const canEditStatus = ['پذیرش', 'انباردار', 'حسابدار', 'مدیریت'].includes(userRole);
     const canEditDeliveryDate = userRole === 'انباردار';
@@ -153,8 +153,6 @@ exports.updateOrder = async (req, res) => {
       newDeliveryDate === null &&
       newDescription === null &&
       newAllDescription === null &&
-
-
       errorMessages.length > 0
     ) {
       await client.query('ROLLBACK');
@@ -227,7 +225,9 @@ WHERE id = $10;`;
 
     let logMessage = `سفارش مشتری "${customerName}" ویرایش شد`;
 
-    if (newStatus) {
+    if (newAllDescription) {
+      logMessage = `توضیحات "${newAllDescription}" به سفارش ${orderInfoRes.rows[0].piece_name || 'نامشخص'} مربوط به مشتری ${customerName} اضافه شد`;
+    } else if (newStatus) {
       switch (newStatus) {
         case 'در انتظار تائید حسابداری':
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}"  توسط شرکت تأیید شد و در انتظار تائید حسابداری است`;
@@ -258,9 +258,6 @@ WHERE id = $10;`;
           const appointmentTime = newAppointmentTime || 'نامشخص';
           logMessage = `برای سفارش قطعه "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi}" ساعت "${appointmentTime}" نوبت گذاری شد`;
           break;
-
-          logMessage = `برای سفارش قطعه "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi || 'نامشخص'}" نوبت گذاری شد`;
-          break;
         case 'انصراف مشتری':
           logMessage = `مشتری "${customerName}" از ادامه‌ی سفارش "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" به دلیل "${newDescription || 'نداشتن توضیحات'}" انصراف داد`;
           break;
@@ -275,7 +272,7 @@ WHERE id = $10;`;
       }
     }
 
-    await createLog(req.user.id, 'به‌روزرسانی سفارش', logMessage);
+    await createLog(req.user.id, 'به‌روزرسانی سفارش', logMessage, customerPhone || null);
 
     await client.query('COMMIT');
 

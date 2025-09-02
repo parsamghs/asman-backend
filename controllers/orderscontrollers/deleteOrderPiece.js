@@ -26,10 +26,12 @@ exports.deleteOrderPiece = async (req, res) => {
     const { reception_id, customer_id, status, piece_name } = orderInfo.rows[0];
 
     const customerResult = await client.query(
-      'SELECT customer_name FROM customers WHERE id = $1',
+      'SELECT customer_name, phone_number FROM customers WHERE id = $1',
       [customer_id]
     );
+
     const customerName = customerResult.rows[0]?.customer_name || 'نامشخص';
+    const phoneNumber = customerResult.rows[0]?.phone_number || null;
 
     if (status === 'حذف شده') {
       await client.query('DELETE FROM orders WHERE id = $1', [order_id]);
@@ -55,7 +57,8 @@ exports.deleteOrderPiece = async (req, res) => {
       await createLog(
         req.user.id,
         'حذف کامل سفارش',
-        `قطعه "${piece_name || 'نامشخص'}" به‌صورت کامل از سفارشات مشتری "${customerName}" حذف شد.`
+        `قطعه "${piece_name || 'نامشخص'}" به‌صورت کامل از سفارشات مشتری "${customerName}" حذف شد.`,
+        phoneNumber
       );
 
       await client.query('COMMIT');
@@ -69,7 +72,8 @@ exports.deleteOrderPiece = async (req, res) => {
       await createLog(
         req.user.id,
         'علامت‌گذاری حذف سفارش',
-        `قطعه "${piece_name || 'نامشخص'}" از سفارشات مشتری "${customerName}" به عنوان "حذف شده" علامت‌گذاری شد.`
+        `قطعه "${piece_name || 'نامشخص'}" از سفارشات مشتری "${customerName}" به عنوان "حذف شده" علامت‌گذاری شد.`,
+        phoneNumber
       );
 
       await client.query('COMMIT');

@@ -14,7 +14,7 @@ moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 exports.addOrder = async (req, res) => {
   const client = await pool.connect();
   try {
-    const { customer_name, phone_number, reception_number, reception_date, car_status, car_name, chassis_number, orders, order_type } = req.body;
+    const { customer_name, phone_number, reception_number, reception_date, car_status, car_name, chassis_number, orderer, admissions_specialist, orders, order_type } = req.body;
 
     if (!Array.isArray(orders) || orders.length === 0) {
       return res.status(400).json({ message: 'لیست سفارش‌ها نمی‌تواند خالی باشد.' });
@@ -145,14 +145,16 @@ exports.addOrder = async (req, res) => {
       }
 
       const receptionRes = await client.query(
-        `INSERT INTO receptions (reception_date, reception_number, customer_id, car_status , chassis_number)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        `INSERT INTO receptions (reception_date, reception_number, customer_id, car_status , chassis_number, orderer, admissions_specialist)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
         [
           receptionDateResult.date.format('YYYY-MM-DD'),
           reception_number,
           customerId,
           car_status,
-          chassis_number?.trim() || null
+          chassis_number?.trim() || null,
+          orderer || null,
+          admissions_specialist || null
         ]
       );
       receptionId = receptionRes.rows[0].id;
@@ -179,23 +181,23 @@ exports.addOrder = async (req, res) => {
       if (typeof order.accounting_confirmation !== 'boolean') {
         return res.status(400).json({ message: `مقدار accounting_confirmation باید بولین باشد.` });
       }
-    
+
       await insertPartIfNotExists(client, req.user.category, order.part_id, order.piece_name);
       await insertCarIfNotExists(client, req.user.category, car_name);
 
       const insertOrder = await client.query(
         `INSERT INTO orders (
-          customer_id, piece_name, part_id, number_of_pieces,
-          order_channel, market_name, market_phone,
-          order_date, estimated_arrival_days,
-          estimated_arrival_date, all_description,
-          reception_id, status, order_number,
-          car_name, accounting_confirmation
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7,
-          $8, $9, $10, $11, $12, $13,
-          $14, $15, $16
-        ) RETURNING id`,
+    customer_id, piece_name, part_id, number_of_pieces,
+    order_channel, market_name, market_phone,
+    order_date, estimated_arrival_days,
+    estimated_arrival_date, all_description,
+    reception_id, status, order_number,
+    car_name, accounting_confirmation
+  ) VALUES (
+    $1, $2, $3, $4, $5, $6, $7,
+    $8, $9, $10, $11, $12, $13,
+    $14, $15, $16
+  ) RETURNING id`,
         [
           customerId,
           order.piece_name,
@@ -220,8 +222,10 @@ exports.addOrder = async (req, res) => {
     await createLog(
       req.user.id,
       order_type === 'pre_order' ? 'ثبت پیش‌ درخواست' : 'ثبت سفارش جدید',
-      `${order_type === 'pre_order' ? 'پیش درخواست جدیدی' : 'سفارش جدیدی'} ثبت شد`
+      `${order_type === 'pre_order' ? 'پیش درخواست جدیدی' : 'سفارش جدیدی'} با شماره پذیرش ${reception_number} ثبت شد`,
+      phone_number
     );
+
 
     await client.query('COMMIT');
     res.status(201).json({

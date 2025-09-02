@@ -34,11 +34,13 @@ exports.addPiecesToExistingReception = async (req, res) => {
 
       const { customer_id, reception_number } = receptionRes.rows[0];
 
-      const customerRes = await client.query(
-        'SELECT customer_name FROM customers WHERE id = $1',
+      const customerResult = await client.query(
+        'SELECT customer_name, phone_number FROM customers WHERE id = $1',
         [customer_id]
       );
-      const customerName = customerRes.rows[0]?.customer_name || 'نامشخص';
+
+      const customerName = customerResult.rows[0]?.customer_name || 'نامشخص';
+      const phoneNumber = customerResult.rows[0]?.phone_number || null;
 
       const carNameRes = await client.query(
         'SELECT car_name FROM orders WHERE reception_id = $1 LIMIT 1',
@@ -107,7 +109,7 @@ exports.addPiecesToExistingReception = async (req, res) => {
         }
 
         await insertPartIfNotExists(client, req.user.category, order.part_id, order.piece_name);
-        
+
         await client.query(
           `INSERT INTO orders (
             customer_id, reception_id, order_number, piece_name, part_id, number_of_pieces, 
@@ -117,8 +119,8 @@ exports.addPiecesToExistingReception = async (req, res) => {
           )
           VALUES (
             $1, $2, $3, $4, $5, $6,
-            $7, $8, $9, $10, $11,
-            $12, $13, $14, $15, $16, $17
+  $7, $8, $9, $10, $11,
+  $12, $13, $14, $15, $16, $17
           )`,
           [
             customer_id,
@@ -145,7 +147,8 @@ exports.addPiecesToExistingReception = async (req, res) => {
       await createLog(
         req.user.id,
         'افزودن سفارش به پذیرش',
-        `سفارش جدید به پذیرش شماره "${reception_number}" مشتری "${customerName}" اضافه شد.`
+        `سفارش جدید به پذیرش شماره "${reception_number}" مشتری "${customerName}" اضافه شد.`,
+        phoneNumber
       );
 
       await client.query('COMMIT');

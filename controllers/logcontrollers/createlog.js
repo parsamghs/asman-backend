@@ -6,8 +6,9 @@ const moment = require('moment-timezone');
  * @param {number} userId 
  * @param {string} action 
  * @param {string} message 
+ * @param {string} phoneNumber 
  */
-const createLog = async (userId, action, message) => {
+const createLog = async (userId, action, message, phoneNumber) => {
   try {
     const result = await pool.query(
       'SELECT name, last_name, dealer_id FROM login WHERE id = $1',
@@ -27,10 +28,10 @@ const createLog = async (userId, action, message) => {
 
     await pool.query(
       `
-      INSERT INTO logs (user_id, action, message, user_name, dealer_id, log_time)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO logs (user_id, action, message, user_name, dealer_id, log_time, phone_number)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
-      [userId, action, message, userName, dealerId, tehranTime]
+      [userId, action, message, userName, dealerId, tehranTime, phoneNumber]
     );
 
   } catch (err) {

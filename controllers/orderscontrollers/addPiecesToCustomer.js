@@ -15,7 +15,7 @@ exports.addPiecesToCustomer = async (req, res) => {
       return res.status(400).json({ message: 'شناسه مشتری معتبر نیست.' });
     }
 
-    const { reception_number, reception_date, car_status, car_name, chassis_number, orders } = req.body;
+    const { reception_number, reception_date, car_status, car_name, chassis_number, orderer, admissions_specialist, orders } = req.body;
 
     if (!reception_number || typeof reception_number !== 'string') {
       return res.status(400).json({ message: 'شماره پذیرش وارد نشده یا معتبر نیست.' });
@@ -67,18 +67,21 @@ exports.addPiecesToCustomer = async (req, res) => {
       }
 
       const receptionResult = await client.query(
-        `INSERT INTO receptions (customer_id, reception_number, reception_date, car_status, chassis_number) 
-         VALUES ($1, $2, $3, $4 , $5) RETURNING id`,
-        [customer_id, reception_number, formattedReceptionDate, car_status, chassis_number?.trim() || null]
+        `INSERT INTO receptions (customer_id, reception_number, reception_date, car_status, chassis_number, orderer, admissions_specialist) 
+         VALUES ($1, $2, $3, $4 , $5, $6, $7) RETURNING id`,
+        [customer_id, reception_number, formattedReceptionDate, car_status, chassis_number?.trim() || null, orderer || null,
+        admissions_specialist || null]
       );
 
       const reception_id = receptionResult.rows[0].id;
 
       const customerResult = await client.query(
-        'SELECT customer_name FROM customers WHERE id = $1',
+        'SELECT customer_name, phone_number FROM customers WHERE id = $1',
         [customer_id]
       );
+
       const customerName = customerResult.rows[0]?.customer_name || 'نامشخص';
+      const phoneNumber = customerResult.rows[0]?.phone_number || null;
 
       for (const [index, order] of orders.entries()) {
         try {
@@ -134,17 +137,17 @@ exports.addPiecesToCustomer = async (req, res) => {
 
           const insertResult = await client.query(
             `INSERT INTO orders (
-  customer_id, reception_id, order_number, piece_name, part_id, number_of_pieces, 
-  order_channel, market_name, market_phone, order_date,
-  estimated_arrival_days, estimated_arrival_date, status, all_description,
-  car_name, accounting_confirmation
-)
-VALUES (
-  $1, $2, $3, $4, $5, $6,
-  $7, $8, $9, $10,
-  $11, $12, $13, $14,
-  $15, $16
-)RETURNING id`,
+    customer_id, reception_id, order_number, piece_name, part_id, number_of_pieces, 
+    order_channel, market_name, market_phone, order_date,
+    estimated_arrival_days, estimated_arrival_date, status, all_description,
+    car_name, accounting_confirmation
+  )
+  VALUES (
+    $1, $2, $3, $4, $5, $6,
+    $7, $8, $9, $10,
+    $11, $12, $13, $14,
+    $15, $16
+  ) RETURNING id`,
             [
               customer_id,
               reception_id,
@@ -165,6 +168,7 @@ VALUES (
             ]
           );
 
+
           const orderId = insertResult.rows[0].id;
 
         } catch (err) {
@@ -180,7 +184,8 @@ VALUES (
       await createLog(
         req.user.id,
         'ثبت پذیرش جدید',
-        `پذیرش جدید برای مشتری "${customerName}" ثبت شد.`
+        `پذیرش جدید برای مشتری "${customerName}"به شماره ${reception_number} ثبت شد`,
+        phoneNumber
       );
 
       await client.query('COMMIT');

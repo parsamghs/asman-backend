@@ -11,7 +11,7 @@ exports.deleteCustomerAndAllOrders = async (req, res) => {
     await client.query('BEGIN');
 
     const customerResult = await client.query(
-      'SELECT customer_name, dealer_id FROM customers WHERE id = $1',
+      'SELECT customer_name, dealer_id, phone_number FROM customers WHERE id = $1',
       [customerId]
     );
 
@@ -27,6 +27,7 @@ exports.deleteCustomerAndAllOrders = async (req, res) => {
     }
 
     const customerName = customer.customer_name || 'نامشخص';
+    const customerPhone = customer.phone_number || null;
 
     const receptionsRes = await client.query(
       'SELECT id FROM receptions WHERE customer_id = $1',
@@ -78,7 +79,8 @@ exports.deleteCustomerAndAllOrders = async (req, res) => {
       await createLog(
         req.user.id,
         'حذف مشتری',
-        `مشتری "${customerName}" و تمام پذیرش‌ها و قطعات حذف شده کامل پاک شدند.`
+        `مشتری "${customerName}" و تمام پذیرش‌ها و قطعات حذف شده کامل پاک شدند.`,
+        customerPhone
       );
 
       await client.query('COMMIT');
@@ -89,7 +91,8 @@ exports.deleteCustomerAndAllOrders = async (req, res) => {
       await createLog(
         req.user.id,
         'علامت‌گذاری سفارش‌های مشتری',
-        `تمام سفارش‌های مشتری "${customerName}" به وضعیت "حذف شده" تغییر یافتند.`
+        `تمام سفارش‌های مشتری "${customerName}" به وضعیت "حذف شده" تغییر یافتند.`,
+        customerPhone
       );
 
       await client.query('COMMIT');

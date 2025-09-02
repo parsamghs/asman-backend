@@ -42,9 +42,8 @@ exports.updateMultipleOrderStatus = async (req, res) => {
         }
 
         let convertedAppointmentDate = appointment_date;
-
         if (new_status === 'نوبت داده شد' && appointment_date) {
-            const m = moment(appointment_date, 'jYYYY/jMM/jDD');
+            const m = momentTZ.tz(appointment_date, 'jYYYY/jMM/jDD', 'Asia/Tehran');
             if (!m.isValid()) {
                 return res.status(400).json({ message: 'تاریخ نوبت‌دهی وارد شده معتبر نیست.' });
             }
@@ -52,7 +51,7 @@ exports.updateMultipleOrderStatus = async (req, res) => {
         }
 
         const orderDetailsRes = await client.query(
-            `SELECT o.id, o.piece_name, r.customer_id, COALESCE(c.customer_name, 'نامشخص') AS customer_name
+            `SELECT o.id, o.piece_name, r.customer_id, COALESCE(c.customer_name, 'نامشخص') AS customer_name, c.phone_number
              FROM orders o
              LEFT JOIN receptions r ON o.reception_id = r.id
              LEFT JOIN customers c ON r.customer_id = c.id
@@ -64,22 +63,22 @@ exports.updateMultipleOrderStatus = async (req, res) => {
             return res.status(404).json({ message: 'هیچ سفارشی با این شناسه‌ها یافت نشد.' });
         }
 
-        const customerGroups = {};
+        const customerGroupsWithPhone = {};
         for (const row of orderDetailsRes.rows) {
             const customerName = row.customer_name;
-            if (!customerGroups[customerName]) {
-                customerGroups[customerName] = [];
+            const phoneNumber = row.phone_number || null;
+            if (!customerGroupsWithPhone[customerName]) {
+                customerGroupsWithPhone[customerName] = { pieces: [], phone: phoneNumber };
             }
-            customerGroups[customerName].push(row.piece_name || 'نامشخص');
+            customerGroupsWithPhone[customerName].pieces.push(row.piece_name || 'نامشخص');
         }
 
-        const deliveryDate =
-            new_status === 'دریافت شد'
-                ? moment().tz('Asia/Tehran').format('YYYY-MM-DD hh:mm')
-                : null;
+        const deliveryDate = new_status === 'دریافت شد'
+            ? moment().tz('Asia/Tehran').format('YYYY-MM-DD HH:mm')
+            : null;
 
         if (new_status === 'در انتظار تائید حسابداری') {
-            if (!req.body.final_order_number || req.body.final_order_number.trim() === '') {
+            if (!final_order_number || final_order_number.trim() === '') {
                 return res.status(400).json({
                     message: 'وارد کردن شماره سفارش نهایی برای وضعیت "در انتظار تائید حسابداری" الزامی است.'
                 });
@@ -92,16 +91,16 @@ exports.updateMultipleOrderStatus = async (req, res) => {
 
         const updateResult = await client.query(
             `UPDATE orders
-   SET status = $1,
-       delivery_date = COALESCE($3, delivery_date),
-       final_order_number = COALESCE($4, final_order_number),
-       appointment_date = CASE WHEN $8 THEN $6 ELSE appointment_date END,
-       appointment_time = CASE WHEN $8 THEN $7 ELSE appointment_time END,
-       description = CASE
-         WHEN $2::text IS NOT NULL THEN CONCAT_WS(' / ', description::text, $2::text)
-         ELSE description
-       END
-   WHERE id = ANY($5::int[])`,
+             SET status = $1,
+                 delivery_date = COALESCE($3, delivery_date),
+                 final_order_number = COALESCE($4, final_order_number),
+                 appointment_date = CASE WHEN $8 THEN $6 ELSE appointment_date END,
+                 appointment_time = CASE WHEN $8 THEN $7 ELSE appointment_time END,
+                 description = CASE
+                     WHEN $2::text IS NOT NULL THEN CONCAT_WS(' / ', description::text, $2::text)
+                     ELSE description
+                 END
+             WHERE id = ANY($5::int[])`,
             [
                 new_status,
                 description,
@@ -121,25 +120,25 @@ exports.updateMultipleOrderStatus = async (req, res) => {
 
             const fullOrderInfoRes = await client.query(
                 `SELECT id, part_id, piece_name, car_name, number_of_pieces
-     FROM orders
-     WHERE id = ANY($1::int[])`,
+                 FROM orders
+                 WHERE id = ANY($1::int[])`,
                 [order_ids]
             );
 
             for (const order of fullOrderInfoRes.rows) {
                 await client.query(`
-      INSERT INTO lost_orders (
-        part_id,
-        piece_name,
-        car_name,
-        lost_description,
-        count,
-        lost_date,
-        lost_time,
-        status,
-        dealer_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `, [
+                    INSERT INTO lost_orders (
+                        part_id,
+                        piece_name,
+                        car_name,
+                        lost_description,
+                        count,
+                        lost_date,
+                        lost_time,
+                        status,
+                        dealer_id
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `, [
                     order.part_id || null,
                     order.piece_name || 'نامشخص',
                     order.car_name || 'نامشخص',
@@ -153,8 +152,9 @@ exports.updateMultipleOrderStatus = async (req, res) => {
             }
         }
 
-        for (const [customerName, pieces] of Object.entries(customerGroups)) {
-            const piecesText = pieces.map(name => `«${name}»`).join('، ');
+        for (const [customerName, data] of Object.entries(customerGroupsWithPhone)) {
+            const piecesText = data.pieces.map(name => `«${name}»`).join('، ');
+            const phone = data.phone;
             let logMessage = '';
 
             switch (new_status) {
@@ -165,7 +165,7 @@ exports.updateMultipleOrderStatus = async (req, res) => {
                     logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط شرکت لغو شد`;
                     break;
                 case 'در انتظار دریافت':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط حسابدار پرداخت شد و در انتظار دریافت است `;
+                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط حسابدار پرداخت شد و در انتظار دریافت است`;
                     break;
                 case 'عدم پرداخت حسابداری':
                     logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط حسابدار پرداخت نشد`;
@@ -185,7 +185,7 @@ exports.updateMultipleOrderStatus = async (req, res) => {
                         appointmentShamsi = moment(convertedAppointmentDate, 'YYYY-MM-DD').format('jYYYY/jMM/jDD');
                     }
                     const appointmentTime = appointment_time || 'نامشخص';
-                    logMessage = `برای سفارشات${piecesText} مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi}" ساعت "${appointmentTime}" نوبت‌گذاری شد`;
+                    logMessage = `برای سفارشات ${piecesText} مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi}" ساعت "${appointmentTime}" نوبت‌گذاری شد`;
                     break;
                 case 'انصراف مشتری':
                     logMessage = `مشتری "${customerName}" از ادامه‌ی سفارشات ${piecesText} به دلیل "${description || 'بدون توضیحات'}" انصراف داد`;
@@ -200,7 +200,7 @@ exports.updateMultipleOrderStatus = async (req, res) => {
                     logMessage = `وضعیت سفارشات ${piecesText} مربوط به مشتری "${customerName}" به "${new_status}" تغییر یافت`;
             }
 
-            await createLog(req.user.id, 'به‌روزرسانی گروهی سفارش‌ها', logMessage);
+            await createLog(req.user.id, 'به‌روزرسانی گروهی سفارش‌ها', logMessage, phone);
         }
 
         await client.query('COMMIT');

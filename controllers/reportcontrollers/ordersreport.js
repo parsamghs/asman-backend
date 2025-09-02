@@ -12,9 +12,11 @@ exports.downloadOrdersReport = async (req, res) => {
       return res.status(400).json({ message: 'date_type نامعتبر است.' });
     }
 
+    // تبدیل تاریخ شمسی به میلادی
     const fromDateGregorian = moment(from_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
     const toDateGregorian = moment(to_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
 
+    // فیلتر وضعیت
     let statusFilter = '';
     if (status) {
       if (status === 'لغو شده') {
@@ -26,11 +28,12 @@ exports.downloadOrdersReport = async (req, res) => {
       }
     }
 
+    // کوئری اصلاح شده با ستون صحیح c.id
     const query = `
       SELECT
-        c.customer_id,
+        c.id AS customer_id,
         c.customer_name,
-        c.customer_phone,
+        c.phone_number AS customer_phone,
         r.reception_id,
         r.reception_number,
         r.reception_date,
@@ -56,7 +59,7 @@ exports.downloadOrdersReport = async (req, res) => {
         o.description,
         o.all_description
       FROM customers c
-      JOIN receptions r ON c.customer_id = r.customer_id
+      JOIN receptions r ON c.id = r.customer_id
       JOIN orders o ON r.reception_id = o.reception_id
       WHERE r.dealer_id = $1
       AND ${date_type} BETWEEN $2 AND $3
@@ -67,6 +70,7 @@ exports.downloadOrdersReport = async (req, res) => {
     const result = await pool.query(query, [req.user.dealer_id, fromDateGregorian, toDateGregorian]);
     const data = result.rows;
 
+    // تبدیل تاریخ‌ها به شمسی
     data.forEach(row => {
       row.reception_date = row.reception_date ? moment(row.reception_date).format('jYYYY/jMM/jDD') : '';
       row.order_date = row.order_date ? moment(row.order_date).format('jYYYY/jMM/jDD') : '';
@@ -75,6 +79,7 @@ exports.downloadOrdersReport = async (req, res) => {
       row.appointment_date = row.appointment_date ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : '';
     });
 
+    // خروجی CSV
     if (format === 'csv') {
       const fields = Object.keys(data[0] || {});
       const json2csv = new Parser({ fields });
@@ -85,6 +90,7 @@ exports.downloadOrdersReport = async (req, res) => {
       res.attachment('orders_report.csv');
       return res.send(csvWithBOM);
 
+    // خروجی Excel
     } else if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('گزارش سفارشات');
