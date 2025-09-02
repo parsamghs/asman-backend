@@ -77,9 +77,37 @@ exports.downloadOrdersReport = async (req, res) => {
       row.appointment_date = row.appointment_date ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : '';
     });
 
-    // خروجی CSV
     if (format === 'csv') {
-      const fields = Object.keys(data[0] || {});
+      const fields = [
+        'customer_id',
+        'customer_name',
+        'customer_phone',
+        'reception_id',
+        'reception_number',
+        'reception_date',
+        'car_status',
+        'chassis_number',
+        'order_id',
+        'order_number',
+        'final_order_number',
+        'order_date',
+        'estimated_arrival_date',
+        'delivery_date',
+        'piece_name',
+        'part_id',
+        'number_of_pieces',
+        'order_channel',
+        'market_name',
+        'market_phone',
+        'estimated_arrival_days',
+        'status',
+        'description',
+        'all_description',
+        'appointment_date',
+        'appointment_time',
+        'accounting_confirmation',
+        'car_name'
+      ];
       const json2csv = new Parser({ fields });
       const csv = json2csv.parse(data);
       const csvWithBOM = '\uFEFF' + csv;
@@ -88,23 +116,42 @@ exports.downloadOrdersReport = async (req, res) => {
       res.attachment('orders_report.csv');
       return res.send(csvWithBOM);
 
-    // خروجی Excel
     } else if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('گزارش سفارشات');
 
-      if (data.length > 0) {
-        worksheet.columns = Object.keys(data[0]).map(key => ({
-          header: key,
-          key,
-          width: 20,
-        }));
-        data.forEach(row => worksheet.addRow(row));
-      } else {
-        worksheet.addRow(['No data available']);
-      }
+      worksheet.columns = [
+        { header: 'کد مشتری', key: 'customer_id', width: 15 },
+        { header: 'نام مشتری', key: 'customer_name', width: 25 },
+        { header: 'تلفن مشتری', key: 'customer_phone', width: 20 },
+        { header: 'کد پذیرش', key: 'reception_id', width: 15 },
+        { header: 'شماره پذیرش', key: 'reception_number', width: 20 },
+        { header: 'تاریخ پذیرش', key: 'reception_date', width: 15 },
+        { header: 'وضعیت خودرو', key: 'car_status', width: 15 },
+        { header: 'شماره شاسی', key: 'chassis_number', width: 20 },
+        { header: 'کد سفارش', key: 'order_id', width: 15 },
+        { header: 'شماره سفارش', key: 'order_number', width: 20 },
+        { header: 'شماره نهایی سفارش', key: 'final_order_number', width: 25 },
+        { header: 'تاریخ سفارش', key: 'order_date', width: 15 },
+        { header: 'تاریخ رسیدن', key: 'estimated_arrival_date', width: 15 },
+        { header: 'تاریخ تحویل', key: 'delivery_date', width: 15 },
+        { header: 'نام قطعه', key: 'piece_name', width: 25 },
+        { header: 'کد قطعه', key: 'part_id', width: 20 },
+        { header: 'تعداد', key: 'number_of_pieces', width: 10 },
+        { header: 'کانال سفارش', key: 'order_channel', width: 20 },
+        { header: 'نام بازار', key: 'market_name', width: 20 },
+        { header: 'تلفن بازار', key: 'market_phone', width: 20 },
+        { header: 'روزهای تاخیر', key: 'estimated_arrival_days', width: 15 },
+        { header: 'وضعیت', key: 'status', width: 20 },
+        { header: 'توضیحات', key: 'description', width: 40 },
+        { header: 'توضیحات کامل', key: 'all_description', width: 40 },
+        { header: 'تاریخ نوبت', key: 'appointment_date', width: 15 },
+        { header: 'ساعت نوبت', key: 'appointment_time', width: 15 },
+        { header: 'تایید حسابداری', key: 'accounting_confirmation', width: 20 },
+        { header: 'نام خودرو', key: 'car_name', width: 20 }
+      ];
 
-      const buffer = await workbook.xlsx.writeBuffer();
+      data.forEach(row => worksheet.addRow(row));
 
       res.setHeader(
         'Content-Type',
@@ -115,7 +162,8 @@ exports.downloadOrdersReport = async (req, res) => {
         'attachment; filename=orders_report.xlsx'
       );
 
-      return res.send(Buffer.from(buffer));
+      await workbook.xlsx.write(res);
+      res.end();
 
     } else {
       return res.status(400).json({ message: 'فرمت خروجی نامعتبر است (csv یا excel).' });
