@@ -12,21 +12,33 @@ exports.downloadOrdersReport = async (req, res) => {
       return res.status(400).json({ message: 'date_type نامعتبر است.' });
     }
 
-    const fromDateGregorian = moment(from_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
-    const toDateGregorian = moment(to_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
+    // ستونی که باید روی آن فیلتر تاریخ بخورد را مشخص کن
+    const dateColumn = date_type === 'order_date' ? 'o.order_date' : 'r.reception_date';
 
+    // تبدیل تاریخ‌ها و ساخت بازه [from, to)
+    const fromDateGregorian = moment(from_date, 'jYYYY/jMM/jDD').startOf('day').format('YYYY-MM-DD');
+    const toDateGregorianExclusive = moment(to_date, 'jYYYY/jMM/jDD').add(1, 'day').startOf('day').format('YYYY-MM-DD');
+
+    // فیلتر وضعیت
     let statusFilter = '';
-    if (status) {
+    if (status && status !== 'all') {
       if (status === 'لغو شده') {
-        statusFilter = `AND o.status IN ('لغو توسط شرکت','عدم پرداخت حسابداری','حذف شده','تحویل نشد','انصراف مشتری','عدم دریافت')`;
+        statusFilter = `
+          AND o.status IN (
+            'لغو توسط شرکت','عدم پرداخت حسابداری','حذف شده','تحویل نشد','انصراف مشتری','عدم دریافت'
+          )
+        `;
       } else if (status === 'بحرانی') {
-        statusFilter = `AND o.estimated_arrival_days <= 0 AND o.status IN ('در انتظار تائید شرکت','در انتظار تائید حسابداری','در انتظار دریافت','در انتظار نوبت دهی','دریافت شد','نوبت داده شد')`;
+        statusFilter = `
+          AND o.estimated_arrival_days <= 0
+          AND o.status IN ('در انتظار تائید شرکت','در انتظار تائید حسابداری','در انتظار دریافت','در انتظار نوبت دهی','دریافت شد','نوبت داده شد')
+        `;
       } else {
-        statusFilter = `AND o.status = '${status}'`;
+        statusFilter = `AND o.status = $4`; // پارامتری کن برای جلوگیری از SQL injection
       }
     }
 
-    const query = `
+    const baseQuery = `
       SELECT
         c.id AS customer_id,
         c.customer_name,
@@ -60,66 +72,49 @@ exports.downloadOrdersReport = async (req, res) => {
       JOIN receptions r ON c.id = r.customer_id
       JOIN orders o ON r.id = o.reception_id
       WHERE c.dealer_id = $1
-      AND ${date_type} BETWEEN $2 AND $3
+        AND ${dateColumn} >= $2
+        AND ${dateColumn} <  $3
       ${statusFilter}
-      ORDER BY ${date_type} DESC
+      ORDER BY ${dateColumn} DESC
     `;
 
-    const result = await pool.query(query, [req.user.dealer_id, fromDateGregorian, toDateGregorian]);
+    const params = [req.user.dealer_id, fromDateGregorian, toDateGregorianExclusive];
+    if (status && status !== 'all' && status !== 'لغو شده' && status !== 'بحرانی') {
+      params.push(status);
+    }
+
+    const result = await pool.query(baseQuery, params);
     const data = result.rows;
 
     // تبدیل تاریخ‌ها به شمسی
     data.forEach(row => {
-      row.reception_date = row.reception_date ? moment(row.reception_date).format('jYYYY/jMM/jDD') : '';
-      row.order_date = row.order_date ? moment(row.order_date).format('jYYYY/jMM/jDD') : '';
-      row.estimated_arrival_date = row.estimated_arrival_date ? moment(row.estimated_arrival_date).format('jYYYY/jMM/jDD') : '';
-      row.delivery_date = row.delivery_date ? moment(row.delivery_date).format('jYYYY/jMM/jDD') : '';
-      row.appointment_date = row.appointment_date ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : '';
+      row.reception_date        = row.reception_date        ? moment(row.reception_date).format('jYYYY/jMM/jDD') : '';
+      row.order_date            = row.order_date            ? moment(row.order_date).format('jYYYY/jMM/jDD') : '';
+      row.estimated_arrival_date= row.estimated_arrival_date? moment(row.estimated_arrival_date).format('jYYYY/jMM/jDD') : '';
+      row.delivery_date         = row.delivery_date         ? moment(row.delivery_date).format('jYYYY/jMM/jDD') : '';
+      row.appointment_date      = row.appointment_date      ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : '';
     });
 
     if (format === 'csv') {
       const fields = [
-        'customer_id',
-        'customer_name',
-        'customer_phone',
-        'reception_id',
-        'reception_number',
-        'reception_date',
-        'car_status',
-        'chassis_number',
-        'order_id',
-        'order_number',
-        'final_order_number',
-        'order_date',
-        'estimated_arrival_date',
-        'delivery_date',
-        'piece_name',
-        'part_id',
-        'number_of_pieces',
-        'order_channel',
-        'market_name',
-        'market_phone',
-        'estimated_arrival_days',
-        'status',
-        'description',
-        'all_description',
-        'appointment_date',
-        'appointment_time',
-        'accounting_confirmation',
-        'car_name'
+        'customer_id','customer_name','customer_phone',
+        'reception_id','reception_number','reception_date','car_status','chassis_number',
+        'order_id','order_number','final_order_number','order_date','estimated_arrival_date','delivery_date',
+        'piece_name','part_id','number_of_pieces','order_channel','market_name','market_phone',
+        'estimated_arrival_days','status','description','all_description',
+        'appointment_date','appointment_time','accounting_confirmation','car_name'
       ];
       const json2csv = new Parser({ fields });
       const csv = json2csv.parse(data);
       const csvWithBOM = '\uFEFF' + csv;
-
       res.header('Content-Type', 'text/csv; charset=utf-8');
       res.attachment('orders_report.csv');
       return res.send(csvWithBOM);
+    }
 
-    } else if (format === 'excel') {
+    if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('گزارش سفارشات');
-
       worksheet.columns = [
         { header: 'کد مشتری', key: 'customer_id', width: 15 },
         { header: 'نام مشتری', key: 'customer_name', width: 25 },
@@ -150,24 +145,14 @@ exports.downloadOrdersReport = async (req, res) => {
         { header: 'تایید حسابداری', key: 'accounting_confirmation', width: 20 },
         { header: 'نام خودرو', key: 'car_name', width: 20 }
       ];
-
       data.forEach(row => worksheet.addRow(row));
-
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      );
-      res.setHeader(
-        'Content-Disposition',
-        'attachment; filename=orders_report.xlsx'
-      );
-
+      res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition','attachment; filename=orders_report.xlsx');
       await workbook.xlsx.write(res);
-      res.end();
-
-    } else {
-      return res.status(400).json({ message: 'فرمت خروجی نامعتبر است (csv یا excel).' });
+      return res.end();
     }
+
+    return res.status(400).json({ message: 'فرمت خروجی نامعتبر است (csv یا excel).' });
   } catch (err) {
     console.error('خطا در دریافت گزارش سفارشات:', err);
     res.status(500).json({ message: 'خطا در دریافت گزارش سفارشات.' });
