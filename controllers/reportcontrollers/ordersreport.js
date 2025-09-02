@@ -29,34 +29,33 @@ exports.downloadOrdersReport = async (req, res) => {
     const query = `
       SELECT
         c.id AS customer_id,
-c.customer_name,
-c.phone_number AS customer_phone,
-r.id AS reception_id,
-r.reception_number,
-r.reception_date,
-r.car_status,
-r.chassis_number,
-o.id AS order_id,
-o.order_number,
-o.final_order_number,
-o.order_date,
-o.estimated_arrival_date,
-o.delivery_date,
-o.piece_name,
-o.part_id,
-o.number_of_pieces,
-o.order_channel,
-o.market_name,
-o.market_phone,
-o.estimated_arrival_days,
-o.status,
-o.description,
-o.all_description,
-o.appointment_date,
-o.appointment_time,
-o.accounting_confirmation,
-o.car_name
-
+        c.customer_name,
+        c.phone_number AS customer_phone,
+        r.id AS reception_id,
+        r.reception_number,
+        r.reception_date,
+        r.car_status,
+        r.chassis_number,
+        o.id AS order_id,
+        o.order_number,
+        o.final_order_number,
+        o.order_date,
+        o.estimated_arrival_date,
+        o.delivery_date,
+        o.piece_name,
+        o.part_id,
+        o.number_of_pieces,
+        o.order_channel,
+        o.market_name,
+        o.market_phone,
+        o.estimated_arrival_days,
+        o.status,
+        o.description,
+        o.all_description,
+        o.appointment_date,
+        o.appointment_time,
+        o.accounting_confirmation,
+        o.car_name
       FROM customers c
       JOIN receptions r ON c.id = r.customer_id
       JOIN orders o ON r.id = o.reception_id
@@ -89,13 +88,23 @@ o.car_name
       res.attachment('orders_report.csv');
       return res.send(csvWithBOM);
 
-      // خروجی Excel
+    // خروجی Excel
     } else if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('گزارش سفارشات');
 
-      worksheet.columns = Object.keys(data[0] || {}).map(key => ({ header: key, key, width: 20 }));
-      data.forEach((row) => worksheet.addRow(row));
+      if (data.length > 0) {
+        worksheet.columns = Object.keys(data[0]).map(key => ({
+          header: key,
+          key,
+          width: 20,
+        }));
+        data.forEach(row => worksheet.addRow(row));
+      } else {
+        worksheet.addRow(['No data available']);
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
 
       res.setHeader(
         'Content-Type',
@@ -106,8 +115,7 @@ o.car_name
         'attachment; filename=orders_report.xlsx'
       );
 
-      await workbook.xlsx.write(res);
-      res.end();
+      return res.send(Buffer.from(buffer));
 
     } else {
       return res.status(400).json({ message: 'فرمت خروجی نامعتبر است (csv یا excel).' });
