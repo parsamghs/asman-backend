@@ -88,21 +88,21 @@ exports.downloadOrdersReport = async (req, res) => {
 
     // تبدیل تاریخ‌ها به شمسی
     data.forEach(row => {
-      row.reception_date        = row.reception_date        ? moment(row.reception_date).format('jYYYY/jMM/jDD') : '';
-      row.order_date            = row.order_date            ? moment(row.order_date).format('jYYYY/jMM/jDD') : '';
-      row.estimated_arrival_date= row.estimated_arrival_date? moment(row.estimated_arrival_date).format('jYYYY/jMM/jDD') : '';
-      row.delivery_date         = row.delivery_date         ? moment(row.delivery_date).format('jYYYY/jMM/jDD') : '';
-      row.appointment_date      = row.appointment_date      ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : '';
+      row.reception_date = row.reception_date ? moment(row.reception_date).format('jYYYY/jMM/jDD') : '';
+      row.order_date = row.order_date ? moment(row.order_date).format('jYYYY/jMM/jDD') : '';
+      row.estimated_arrival_date = row.estimated_arrival_date ? moment(row.estimated_arrival_date).format('jYYYY/jMM/jDD') : '';
+      row.delivery_date = row.delivery_date ? moment(row.delivery_date).format('jYYYY/jMM/jDD') : '';
+      row.appointment_date = row.appointment_date ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : '';
     });
 
     if (format === 'csv') {
       const fields = [
-        'customer_id','customer_name','customer_phone',
-        'reception_id','reception_number','reception_date','car_status','chassis_number',
-        'order_id','order_number','final_order_number','order_date','estimated_arrival_date','delivery_date',
-        'piece_name','part_id','number_of_pieces','order_channel','market_name','market_phone',
-        'estimated_arrival_days','status','description','all_description',
-        'appointment_date','appointment_time','accounting_confirmation','car_name'
+        'customer_id', 'customer_name', 'customer_phone',
+        'reception_id', 'reception_number', 'reception_date', 'car_status', 'chassis_number',
+        'order_id', 'order_number', 'final_order_number', 'order_date', 'estimated_arrival_date', 'delivery_date',
+        'piece_name', 'part_id', 'number_of_pieces', 'order_channel', 'market_name', 'market_phone',
+        'estimated_arrival_days', 'status', 'description', 'all_description',
+        'appointment_date', 'appointment_time', 'accounting_confirmation', 'car_name'
       ];
       const json2csv = new Parser({ fields });
       const csv = json2csv.parse(data);
@@ -115,6 +115,7 @@ exports.downloadOrdersReport = async (req, res) => {
     if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('گزارش سفارشات');
+
       worksheet.columns = [
         { header: 'کد مشتری', key: 'customer_id', width: 15 },
         { header: 'نام مشتری', key: 'customer_name', width: 25 },
@@ -145,9 +146,18 @@ exports.downloadOrdersReport = async (req, res) => {
         { header: 'تایید حسابداری', key: 'accounting_confirmation', width: 20 },
         { header: 'نام خودرو', key: 'car_name', width: 20 }
       ];
-      data.forEach(row => worksheet.addRow(row));
-      res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition','attachment; filename=orders_report.xlsx');
+
+      data.forEach(row => {
+        Object.keys(row).forEach(key => {
+          if (typeof row[key] === 'string') {
+            row[key] = row[key].normalize('NFC');
+          }
+        });
+        worksheet.addRow(row);
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=orders_report.xlsx');
       await workbook.xlsx.write(res);
       return res.end();
     }
