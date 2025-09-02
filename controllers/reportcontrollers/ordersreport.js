@@ -12,12 +12,15 @@ exports.downloadOrdersReport = async (req, res) => {
       return res.status(400).json({ message: 'date_type نامعتبر است.' });
     }
 
-    // ستونی که باید روی آن فیلتر تاریخ بخورد را مشخص کن
     const dateColumn = date_type === 'order_date' ? 'o.order_date' : 'r.reception_date';
 
-    // تبدیل تاریخ‌ها و ساخت بازه [from, to)
-    const fromDateGregorian = moment(from_date, 'jYYYY/jMM/jDD').startOf('day').format('YYYY-MM-DD');
-    const toDateGregorianExclusive = moment(to_date, 'jYYYY/jMM/jDD').add(1, 'day').startOf('day').format('YYYY-MM-DD');
+    const fromDateGregorian = moment(from_date, 'jYYYY/jMM/jDD')
+      .startOf('day')
+      .format('YYYY-MM-DD');
+    const toDateGregorianExclusive = moment(to_date, 'jYYYY/jMM/jDD')
+      .add(1, 'day')
+      .startOf('day')
+      .format('YYYY-MM-DD');
 
     // فیلتر وضعیت
     let statusFilter = '';
@@ -34,7 +37,7 @@ exports.downloadOrdersReport = async (req, res) => {
           AND o.status IN ('در انتظار تائید شرکت','در انتظار تائید حسابداری','در انتظار دریافت','در انتظار نوبت دهی','دریافت شد','نوبت داده شد')
         `;
       } else {
-        statusFilter = `AND o.status = $4`; // پارامتری کن برای جلوگیری از SQL injection
+        statusFilter = `AND o.status = $4`;
       }
     }
 
@@ -86,7 +89,7 @@ exports.downloadOrdersReport = async (req, res) => {
     const result = await pool.query(baseQuery, params);
     const data = result.rows;
 
-    // تبدیل تاریخ‌ها به شمسی
+    // تاریخ‌ها رو به شمسی برگردون
     data.forEach(row => {
       row.reception_date = row.reception_date ? moment(row.reception_date).format('jYYYY/jMM/jDD') : '';
       row.order_date = row.order_date ? moment(row.order_date).format('jYYYY/jMM/jDD') : '';
@@ -95,6 +98,7 @@ exports.downloadOrdersReport = async (req, res) => {
       row.appointment_date = row.appointment_date ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : '';
     });
 
+    // خروجی CSV
     if (format === 'csv') {
       const fields = [
         'customer_id', 'customer_name', 'customer_phone',
@@ -107,11 +111,13 @@ exports.downloadOrdersReport = async (req, res) => {
       const json2csv = new Parser({ fields });
       const csv = json2csv.parse(data);
       const csvWithBOM = '\uFEFF' + csv;
+
       res.header('Content-Type', 'text/csv; charset=utf-8');
       res.attachment('orders_report.csv');
-      return res.send(csvWithBOM);
+      return res.send(csvWithBOM); // ✅ return مهمه
     }
 
+    // خروجی Excel
     if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('گزارش سفارشات');
@@ -156,17 +162,18 @@ exports.downloadOrdersReport = async (req, res) => {
         worksheet.addRow(row);
       });
 
-      // درست: خروجی رو به صورت buffer بگیر و یکجا بفرست
       const buffer = await workbook.xlsx.writeBuffer();
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', 'attachment; filename=orders_report.xlsx');
-      res.send(buffer); // دیگه res.end() لازم نیست
+      return res.send(buffer); // ✅ return مهمه
     }
 
+    // اگر فرمت اشتباه بود
     return res.status(400).json({ message: 'فرمت خروجی نامعتبر است (csv یا excel).' });
+
   } catch (err) {
     console.error('خطا در دریافت گزارش سفارشات:', err);
-    res.status(500).json({ message: 'خطا در دریافت گزارش سفارشات.' });
+    return res.status(500).json({ message: 'خطا در دریافت گزارش سفارشات.' });
   }
 };
