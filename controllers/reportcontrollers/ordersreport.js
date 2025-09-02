@@ -12,11 +12,9 @@ exports.downloadOrdersReport = async (req, res) => {
       return res.status(400).json({ message: 'date_type نامعتبر است.' });
     }
 
-    // تبدیل تاریخ شمسی به میلادی
     const fromDateGregorian = moment(from_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
     const toDateGregorian = moment(to_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
 
-    // فیلتر وضعیت
     let statusFilter = '';
     if (status) {
       if (status === 'لغو شده') {
@@ -28,36 +26,37 @@ exports.downloadOrdersReport = async (req, res) => {
       }
     }
 
-    // کوئری اصلاح شده با ستون صحیح c.id
     const query = `
       SELECT
         c.id AS customer_id,
-        c.customer_name,
-        c.phone_number AS customer_phone,
-        r.id AS reception_id,
-        r.reception_number,
-        r.reception_date,
-        r.car_status,
-        r.chassis_number,
-        r.settlement_status,
-        o.order_id,
-        o.order_number,
-        o.final_order_number,
-        o.order_date,
-        o.estimated_arrival_date,
-        o.delivery_date,
-        o.piece_name,
-        o.part_id,
-        o.number_of_pieces,
-        o.order_channel,
-        o.market_name,
-        o.market_phone,
-        o.estimated_arrival_days,
-        o.status,
-        o.appointment_date,
-        o.appointment_time,
-        o.description,
-        o.all_description
+c.customer_name,
+c.phone_number AS customer_phone,
+r.id AS reception_id,
+r.reception_number,
+r.reception_date,
+r.car_status,
+r.chassis_number,
+o.id AS order_id,
+o.order_number,
+o.final_order_number,
+o.order_date,
+o.estimated_arrival_date,
+o.delivery_date,
+o.piece_name,
+o.part_id,
+o.number_of_pieces,
+o.order_channel,
+o.market_name,
+o.market_phone,
+o.estimated_arrival_days,
+o.status,
+o.description,
+o.all_description,
+o.appointment_date,
+o.appointment_time,
+o.accounting_confirmation,
+o.car_name
+
       FROM customers c
       JOIN receptions r ON c.id = r.customer_id
       JOIN orders o ON r.id = o.reception_id
@@ -90,7 +89,7 @@ exports.downloadOrdersReport = async (req, res) => {
       res.attachment('orders_report.csv');
       return res.send(csvWithBOM);
 
-    // خروجی Excel
+      // خروجی Excel
     } else if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('گزارش سفارشات');
