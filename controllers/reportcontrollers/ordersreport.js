@@ -60,7 +60,7 @@ o.car_name
       FROM customers c
       JOIN receptions r ON c.id = r.customer_id
       JOIN orders o ON r.id = o.reception_id
-      WHERE r.dealer_id = $1
+      WHERE c.dealer_id = $1
       AND ${date_type} BETWEEN $2 AND $3
       ${statusFilter}
       ORDER BY ${date_type} DESC
