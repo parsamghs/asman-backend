@@ -156,10 +156,12 @@ exports.downloadOrdersReport = async (req, res) => {
         worksheet.addRow(row);
       });
 
+      // درست: خروجی رو به صورت buffer بگیر و یکجا بفرست
+      const buffer = await workbook.xlsx.writeBuffer();
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', 'attachment; filename=orders_report.xlsx');
-      await workbook.xlsx.write(res);
-      return res.end();
+      res.send(buffer); // دیگه res.end() لازم نیست
     }
 
     return res.status(400).json({ message: 'فرمت خروجی نامعتبر است (csv یا excel).' });
