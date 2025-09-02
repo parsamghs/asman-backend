@@ -164,9 +164,17 @@ exports.downloadOrdersReport = async (req, res) => {
 
       const buffer = await workbook.xlsx.writeBuffer();
 
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=orders_report.xlsx');
-      return res.send(buffer); // ✅ return مهمه
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=orders_report.xlsx'
+      );
+
+      await workbook.xlsx.write(res);
+      res.end(); // ✅  // ✅ return مهمه
     }
 
     // اگر فرمت اشتباه بود
