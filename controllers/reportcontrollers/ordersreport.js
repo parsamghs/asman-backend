@@ -34,7 +34,7 @@ exports.downloadOrdersReport = async (req, res) => {
         c.id AS customer_id,
         c.customer_name,
         c.phone_number AS customer_phone,
-        r.reception_id,
+        r.id AS reception_id,
         r.reception_number,
         r.reception_date,
         r.car_status,
@@ -60,7 +60,7 @@ exports.downloadOrdersReport = async (req, res) => {
         o.all_description
       FROM customers c
       JOIN receptions r ON c.id = r.customer_id
-      JOIN orders o ON r.reception_id = o.reception_id
+      JOIN orders o ON r.id = o.reception_id
       WHERE r.dealer_id = $1
       AND ${date_type} BETWEEN $2 AND $3
       ${statusFilter}
