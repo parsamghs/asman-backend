@@ -162,6 +162,7 @@ exports.downloadOrdersReport = async (req, res) => {
         worksheet.addRow(row);
       });
 
+
       res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -172,7 +173,7 @@ exports.downloadOrdersReport = async (req, res) => {
       );
 
       await workbook.xlsx.write(res);
-      res.end(); // ✅  // ✅ return مهمه
+      return res.end(); // ✅ return بزنی اینجا
     }
 
     // اگر فرمت اشتباه بود
