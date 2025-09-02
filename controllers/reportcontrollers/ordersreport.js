@@ -162,8 +162,6 @@ exports.downloadOrdersReport = async (req, res) => {
         worksheet.addRow(row);
       });
 
-      const buffer = await workbook.xlsx.writeBuffer();
-
       res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
