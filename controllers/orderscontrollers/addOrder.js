@@ -23,9 +23,6 @@ exports.addOrder = async (req, res) => {
     result = validateWithRegex('phone', phone_number);
     if (!result.isValid) return res.status(400).json({ message: result.message });
 
-    result = validateWithRegex('number', reception_number);
-    if (!result.isValid) return res.status(400).json({ message: `شماره پذیرش نامعتبر است.` });
-
     if (!car_name || typeof car_name !== 'string' || car_name.trim().length > 30) {
       return res.status(400).json({
         message: `نام خودرو الزامی است و نباید بیشتر از ۳۰ کاراکتر باشد.`
