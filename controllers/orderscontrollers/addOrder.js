@@ -87,15 +87,16 @@ exports.addOrder = async (req, res) => {
     let customerId;
     let customerExists = false;
 
-    const existingCustomerRes = await client.query(
-      `SELECT id FROM customers WHERE phone_number = $1`,
-      [phone_number]
-    );
-
+  
     if (!req.user || !req.user.dealer_id) {
       return res.status(403).json({ message: 'شناسه نمایندگی پیدا نشد.' });
     }
 
+    const existingCustomerRes = await client.query(
+      `SELECT id FROM customers WHERE phone_number = $1 AND dealer_id = $2`,
+      [phone_number, req.user.dealer_id]
+    );
+    
     if (existingCustomerRes.rows.length > 0) {
       customerId = existingCustomerRes.rows[0].id;
       customerExists = true;
