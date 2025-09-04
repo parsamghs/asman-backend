@@ -65,42 +65,42 @@ exports.exportOrdersExcel = async (req, res) => {
         }
 
         const result = await pool.query(`
-      SELECT 
-        customers.customer_name,
-        customers.phone_number,
-        receptions.reception_number,
-        receptions.reception_date,
-        receptions.car_status,
-        receptions.chassis_number,
-        receptions.orderer,
-        receptions.admissions_specialist,
-        orders.order_number,
-        orders.final_order_number,
-        orders.piece_name,
-        orders.part_id,
-        orders.number_of_pieces,
-        orders.car_name,
-        orders.order_channel,
-        orders.market_name,
-        orders.market_phone,
-        orders.order_date,
-        orders.estimated_arrival_days,
-        orders.estimated_arrival_date,
-        orders.delivery_date,
-        orders.appointment_date,
-        orders.appointment_time,
-        orders.cancellation_date,
-        orders.cancellation_time,
-        orders.status,
-        orders.accounting_confirmation,
-        orders.description,
-        orders.all_description
-      FROM customers
-      LEFT JOIN receptions ON receptions.customer_id = customers.id
-      LEFT JOIN orders ON orders.reception_id = receptions.id
-      ${filters}
-      ORDER BY customers.id, receptions.id, orders.id
-    `, values);
+            SELECT 
+                customers.customer_name,
+                customers.phone_number,
+                receptions.reception_number,
+                receptions.reception_date,
+                receptions.car_status,
+                receptions.chassis_number,
+                receptions.orderer,
+                receptions.admissions_specialist,
+                orders.order_number,
+                orders.final_order_number,
+                orders.piece_name,
+                orders.part_id,
+                orders.number_of_pieces,
+                orders.car_name,
+                orders.order_channel,
+                orders.market_name,
+                orders.market_phone,
+                orders.order_date,
+                orders.estimated_arrival_days,
+                orders.estimated_arrival_date,
+                orders.delivery_date,
+                orders.appointment_date,
+                orders.appointment_time,
+                orders.cancellation_date,
+                orders.cancellation_time,
+                orders.status,
+                orders.accounting_confirmation,
+                orders.description,
+                orders.all_description
+            FROM customers
+            LEFT JOIN receptions ON receptions.customer_id = customers.id
+            LEFT JOIN orders ON orders.reception_id = receptions.id
+            ${filters}
+            ORDER BY customers.id, receptions.id, orders.id
+        `, values);
 
         const safeValue = (value) => value ?? '—';
 
@@ -133,6 +133,7 @@ exports.exportOrdersExcel = async (req, res) => {
             { header: 'کارشناس پذیرش', key: 'admissions_specialist', width: 20 },
             { header: 'سفارش‌ دهنده', key: 'orderer', width: 20 }
         ];
+
         const receptionsSeen = new Set();
         result.rows.forEach(row => {
             if (row.reception_number && !receptionsSeen.has(row.reception_number)) {
@@ -204,11 +205,11 @@ exports.exportOrdersExcel = async (req, res) => {
             });
         });
 
+        // تنظیم استایل و ارتفاع خودکار
         [customerSheet, receptionSheet, orderSheet].forEach(sheet => {
             sheet.views = [{ state: 'frozen', ySplit: 1 }];
-
             const headerRow = sheet.getRow(1);
-            headerRow.height = 20;
+            headerRow.height = 25;
             headerRow.font = { name: 'IranSans', bold: true, size: 12 };
             headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F0F0F0' } };
             headerRow.eachCell(cell => {
@@ -217,56 +218,47 @@ exports.exportOrdersExcel = async (req, res) => {
             });
 
             sheet.eachRow({ includeEmpty: false }, row => {
-                row.height = 20;
                 if (row.number !== 1) {
+                    let maxLines = 1;
                     row.eachCell(cell => {
                         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                         cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
                         cell.font = { name: 'IranSans', size: 11 };
+
+                        const lines = (cell.value ? cell.value.toString().split(/\r\n|\r|\n/).length : 1);
+                        if (lines > maxLines) maxLines = lines;
                     });
+                    row.height = maxLines * 20; // ارتفاع تقریبی هر خط
                 }
             });
         });
 
+        // رنگ‌بندی سلول وضعیت و تأیید حسابداری
         orderSheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
             if (rowNumber === 1) return;
             const statusCell = row.getCell('status');
             let fillColor = 'FFD3D3D3';
             const cell = row.getCell('accounting_confirmation');
-            if (cell.value === true || cell.value === 'TRUE') {
-                cell.value = '☑';
-            }
-            else {
-                cell.value = '☐';
-            }
+            if (cell.value === true || cell.value === 'TRUE') cell.value = '☑';
+            else cell.value = '☐';
 
-            if (canceledStatuses.includes(statusCell.value)) {
-                fillColor = 'FFFFC0C0';
-            } else if (statusCell.value === 'تحویل شد') {
-                fillColor = 'FFB0FFB0';
-            }
+            if (canceledStatuses.includes(statusCell.value)) fillColor = 'FFFFC0C0';
+            else if (statusCell.value === 'تحویل شد') fillColor = 'FFB0FFB0';
 
             row.eachCell(cell => {
-                cell.font = { name: 'IranSans', size: 11 };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
             });
         });
 
         let fileName = `لیست سفارشات-نمایندگی-${req.user.dealer_name || 'NA'}-کد-${req.user.dealer_id || 'NA'}`;
-        if (start_date && end_date) {
-            fileName += `-از-${start_date}-تا-${end_date}`;
-        }
+        if (start_date && end_date) fileName += `-از-${start_date}-تا-${end_date}`;
         const encodedFileName = encodeURIComponent(fileName);
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader(
-            'Content-Disposition',
-            `attachment; filename*=UTF-8''${encodedFileName}.xlsx`
-        );
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFileName}.xlsx`);
 
         await workbook.xlsx.write(res);
         res.end();
-
     } catch (err) {
         console.error('exportOrdersExcel error:', err);
         res.status(500).json({ message: 'Server error' });
