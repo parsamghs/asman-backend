@@ -103,16 +103,57 @@ exports.exportOrdersExcel = async (req, res) => {
         `, values);
 
         const safeValue = (value) => value ?? '—';
-
         const workbook = new ExcelJS.Workbook();
 
+        // --- تعریف شیت‌ها ---
         const customerSheet = workbook.addWorksheet('اطلاعات مشتری');
         customerSheet.columns = [
-            { header: 'نام مشتری', key: 'customer_name', width: 25 },
-            { header: 'شماره تلفن', key: 'phone_number', width: 20 }
+            { header: 'نام مشتری', key: 'customer_name' },
+            { header: 'شماره تلفن', key: 'phone_number' }
         ];
 
+        const receptionSheet = workbook.addWorksheet('اطلاعات پذیرش');
+        receptionSheet.columns = [
+            { header: 'نام مشتری', key: 'customer_name' },
+            { header: 'شماره پذیرش', key: 'reception_number' },
+            { header: 'تاریخ پذیرش', key: 'reception_date' },
+            { header: 'وضعیت خودرو', key: 'car_status' },
+            { header: 'شماره شاسی', key: 'chassis_number' },
+            { header: 'کارشناس پذیرش', key: 'admissions_specialist' },
+            { header: 'سفارش‌ دهنده', key: 'orderer' }
+        ];
+
+        const orderSheet = workbook.addWorksheet('اطلاعات سفارشات');
+        orderSheet.columns = [
+            { header: 'نام مشتری', key: 'customer_name' },
+            { header: 'شماره پذیرش', key: 'reception_number' },
+            { header: 'شماره سفارش', key: 'order_number' },
+            { header: 'شماره حواله', key: 'final_order_number' },
+            { header: 'نام قطعه', key: 'piece_name' },
+            { header: 'کد قطعه', key: 'part_id' },
+            { header: 'تعداد', key: 'number_of_pieces' },
+            { header: 'نام خودرو', key: 'car_name' },
+            { header: 'کانال سفارش', key: 'order_channel' },
+            { header: 'نام بازار', key: 'market_name' },
+            { header: 'تلفن بازار', key: 'market_phone' },
+            { header: 'تاریخ سفارش', key: 'order_date' },
+            { header: 'روز تحویل', key: 'estimated_arrival_days' },
+            { header: 'تاریخ تخمینی رسیدن', key: 'estimated_arrival_date' },
+            { header: 'تاریخ تحویل', key: 'delivery_date' },
+            { header: 'تاریخ نوبت‌دهی', key: 'appointment_date' },
+            { header: 'ساعت نوبت‌دهی', key: 'appointment_time' },
+            { header: 'تاریخ لغو', key: 'cancellation_date' },
+            { header: 'ساعت لغو', key: 'cancellation_time' },
+            { header: 'وضعیت', key: 'status' },
+            { header: 'تأیید حسابداری', key: 'accounting_confirmation' },
+            { header: 'توضیحات لغو', key: 'description' },
+            { header: 'توضیحات کلی', key: 'all_description' }
+        ];
+
+        // --- پر کردن داده‌ها ---
         const customersSeen = new Set();
+        const receptionsSeen = new Set();
+
         result.rows.forEach(row => {
             if (!customersSeen.has(row.phone_number)) {
                 customersSeen.add(row.phone_number);
@@ -121,21 +162,7 @@ exports.exportOrdersExcel = async (req, res) => {
                     phone_number: safeValue(row.phone_number)
                 });
             }
-        });
 
-        const receptionSheet = workbook.addWorksheet('اطلاعات پذیرش');
-        receptionSheet.columns = [
-            { header: 'نام مشتری', key: 'customer_name', width: 25 },
-            { header: 'شماره پذیرش', key: 'reception_number', width: 20 },
-            { header: 'تاریخ پذیرش', key: 'reception_date', width: 20 },
-            { header: 'وضعیت خودرو', key: 'car_status', width: 20 },
-            { header: 'شماره شاسی', key: 'chassis_number', width: 20 },
-            { header: 'کارشناس پذیرش', key: 'admissions_specialist', width: 20 },
-            { header: 'سفارش‌ دهنده', key: 'orderer', width: 20 }
-        ];
-
-        const receptionsSeen = new Set();
-        result.rows.forEach(row => {
             if (row.reception_number && !receptionsSeen.has(row.reception_number)) {
                 receptionsSeen.add(row.reception_number);
                 receptionSheet.addRow({
@@ -148,36 +175,7 @@ exports.exportOrdersExcel = async (req, res) => {
                     customer_name: safeValue(row.customer_name)
                 });
             }
-        });
 
-        const orderSheet = workbook.addWorksheet('اطلاعات سفارشات');
-        orderSheet.columns = [
-            { header: 'نام مشتری', key: 'customer_name', width: 25 },
-            { header: 'شماره پذیرش', key: 'reception_number', width: 20 },
-            { header: 'شماره سفارش', key: 'order_number', width: 20 },
-            { header: 'شماره حواله', key: 'final_order_number', width: 20 },
-            { header: 'نام قطعه', key: 'piece_name', width: 25 },
-            { header: 'کد قطعه', key: 'part_id', width: 20 },
-            { header: 'تعداد', key: 'number_of_pieces', width: 10 },
-            { header: 'نام خودرو', key: 'car_name', width: 20 },
-            { header: 'کانال سفارش', key: 'order_channel', width: 20 },
-            { header: 'نام بازار', key: 'market_name', width: 20 },
-            { header: 'تلفن بازار', key: 'market_phone', width: 20 },
-            { header: 'تاریخ سفارش', key: 'order_date', width: 20 },
-            { header: 'روز تحویل', key: 'estimated_arrival_days', width: 15 },
-            { header: 'تاریخ تخمینی رسیدن', key: 'estimated_arrival_date', width: 20 },
-            { header: 'تاریخ تحویل', key: 'delivery_date', width: 20 },
-            { header: 'تاریخ نوبت‌دهی', key: 'appointment_date', width: 20 },
-            { header: 'ساعت نوبت‌دهی', key: 'appointment_time', width: 15 },
-            { header: 'تاریخ لغو', key: 'cancellation_date', width: 20 },
-            { header: 'ساعت لغو', key: 'cancellation_time', width: 15 },
-            { header: 'وضعیت', key: 'status', width: 20 },
-            { header: 'تأیید حسابداری', key: 'accounting_confirmation', width: 20 },
-            { header: 'توضیحات لغو', key: 'description', width: 30 },
-            { header: 'توضیحات کلی', key: 'all_description', width: 30 }
-        ];
-
-        result.rows.forEach(row => {
             orderSheet.addRow({
                 order_number: safeValue(row.order_number),
                 final_order_number: safeValue(row.final_order_number),
@@ -205,35 +203,50 @@ exports.exportOrdersExcel = async (req, res) => {
             });
         });
 
-        // تنظیم استایل و ارتفاع خودکار
+        // --- استایل و ارتفاع/عرض خودکار ---
         [customerSheet, receptionSheet, orderSheet].forEach(sheet => {
             sheet.views = [{ state: 'frozen', ySplit: 1 }];
             const headerRow = sheet.getRow(1);
             headerRow.height = 25;
             headerRow.font = { name: 'IranSans', bold: true, size: 12 };
             headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F0F0F0' } };
+
             headerRow.eachCell(cell => {
-                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
                 cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
             });
 
+            // ارتفاع و عرض خودکار
             sheet.eachRow({ includeEmpty: false }, row => {
-                if (row.number !== 1) {
-                    let maxLines = 1;
-                    row.eachCell(cell => {
-                        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-                        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-                        cell.font = { name: 'IranSans', size: 11 };
+                let maxLines = 1;
+                row.eachCell(cell => {
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                    cell.font = { name: 'IranSans', size: 11 };
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-                        const lines = (cell.value ? cell.value.toString().split(/\r\n|\r|\n/).length : 1);
-                        if (lines > maxLines) maxLines = lines;
-                    });
-                    row.height = maxLines * 20; // ارتفاع تقریبی هر خط
-                }
+                    if (cell.value) {
+                        const lines = cell.value.toString().split(/\r\n|\r|\n/).length;
+                        const approxLines = Math.ceil(cell.value.toString().length / 50);
+                        maxLines = Math.max(maxLines, lines, approxLines);
+                    }
+                });
+                row.height = maxLines * 20;
+            });
+
+            // محاسبه عرض ستون‌ها
+            sheet.columns.forEach(column => {
+                let maxLength = column.header.length;
+                column.eachCell({ includeEmpty: false }, cell => {
+                    if (cell.value) {
+                        const cellLength = cell.value.toString().length;
+                        if (cellLength > maxLength) maxLength = cellLength;
+                    }
+                });
+                column.width = Math.min(maxLength + 5, 50);
             });
         });
 
-        // رنگ‌بندی سلول وضعیت و تأیید حسابداری
+        // --- رنگ‌بندی وضعیت و تیک حسابداری ---
         orderSheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
             if (rowNumber === 1) return;
             const statusCell = row.getCell('status');
