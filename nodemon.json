@@ -1,0 +1,6 @@
+{
+  "verbose": false,
+  "quiet": true,
+  "watch": ["./"],
+  "ext": "js,json"
+}

@@ -23,7 +23,9 @@ router.use('/suggest-parts', require('./OrdersRoutes/PartsAutoCompleteRoute'));
 
 router.use('/partname-suggest', require('./OrdersRoutes/PartNameAutoCompleteRoute'));
 
-router.use('/edit', require('./OrdersRoutes/UpdateOrderRoute'));
+router.use('/edit', require('./OrdersRoutes/UpdateStatusRoute'));
+
+router.use('/edit-customer', require('./OrdersRoutes/UpdateCustomerRoute'));
 
 router.use('/get-cars', require('./OrdersRoutes/GetCarsRoute'));
 

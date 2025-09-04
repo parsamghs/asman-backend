@@ -40,5 +40,5 @@ app.use('/api/system', systemroute);
 app.use('/api/date', dateroute);
 
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server is running ✅`);
 });

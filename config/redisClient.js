@@ -15,8 +15,6 @@ if (process.env.NODE_ENV === 'production') {
   client.on('error', err => {
     console.error('❌ Redis client error event:', err);
   });
-} else {
-  console.log('⚠️ Redis client not initialized (development mode)');
 }
 
 module.exports = client;

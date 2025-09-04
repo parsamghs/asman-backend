@@ -53,7 +53,7 @@ exports.getLogs = async (req, res) => {
 
     params.push(limit, offset);
     const dataQuery = `
-      SELECT id, log_time, action, message, user_id, user_name
+      SELECT id, log_time, action, message, user_id, user_name, phone_number
       FROM logs
       ${whereSQL}
       ORDER BY log_time DESC
@@ -71,6 +71,7 @@ exports.getLogs = async (req, res) => {
         user_name: log.user_name,
         date: localMoment.format('jYYYY/jMM/jDD'),
         time: localMoment.format('HH:mm'),
+        phone_number: log.phone_number,
       };
     });
 

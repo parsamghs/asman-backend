@@ -4,7 +4,7 @@ const momentTZ = require('moment-timezone');
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 const createLog = require('../logcontrollers/createlog');
 
-exports.updateOrder = async (req, res) => {
+exports.updatestatus = async (req, res) => {
   const client = await pool.connect();
 
   try {

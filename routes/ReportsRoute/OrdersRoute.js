@@ -4,10 +4,10 @@ const authMiddleware = require('../../middlewares/authMiddleware');
 const roleMiddleware = require('../../middlewares/roleMiddleware');
 const dealerAccessMiddleware = require('../../middlewares/dealerAccessMiddleware');
 const UpdateStats = require('../../middlewares/updatestatsMiddleware');
-const {downloadOrdersReport} = require('../../controllers/reportcontrollers/ordersreport');
+const {exportOrdersExcel} = require('../../controllers/reportcontrollers/ordersreport');
 
 
-router.get('/', authMiddleware, dealerAccessMiddleware, roleMiddleware('مدیریت', 'انباردار', 'پذیرش', 'حسابدار'), UpdateStats, downloadOrdersReport);
+router.get('/', authMiddleware, dealerAccessMiddleware, roleMiddleware('مدیریت', 'انباردار'), UpdateStats, exportOrdersExcel);
 
 
 module.exports = router;
