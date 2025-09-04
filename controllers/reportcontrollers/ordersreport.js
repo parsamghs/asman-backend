@@ -105,7 +105,6 @@ exports.exportOrdersExcel = async (req, res) => {
         const safeValue = (value) => value ?? '—';
         const workbook = new ExcelJS.Workbook();
 
-        // --- تعریف شیت‌ها ---
         const customerSheet = workbook.addWorksheet('اطلاعات مشتری');
         customerSheet.columns = [
             { header: 'نام مشتری', key: 'customer_name' },
@@ -118,7 +117,7 @@ exports.exportOrdersExcel = async (req, res) => {
             { header: 'شماره پذیرش', key: 'reception_number' },
             { header: 'تاریخ پذیرش', key: 'reception_date' },
             { header: 'وضعیت خودرو', key: 'car_status' },
-            { header: 'شماره شاسی', key: 'chassis_number', width:30 },
+            { header: 'شماره شاسی', key: 'chassis_number', width: 30 },
             { header: 'کارشناس پذیرش', key: 'admissions_specialist' },
             { header: 'سفارش‌ دهنده', key: 'orderer' }
         ];
@@ -150,7 +149,6 @@ exports.exportOrdersExcel = async (req, res) => {
             { header: 'توضیحات کلی', key: 'all_description' }
         ];
 
-        // --- پر کردن داده‌ها ---
         const customersSeen = new Set();
         const receptionsSeen = new Set();
 
@@ -203,7 +201,6 @@ exports.exportOrdersExcel = async (req, res) => {
             });
         });
 
-        // --- استایل و ارتفاع/عرض خودکار ---
         [customerSheet, receptionSheet, orderSheet].forEach(sheet => {
             sheet.views = [{ state: 'frozen', ySplit: 1 }];
             const headerRow = sheet.getRow(1);
@@ -216,7 +213,6 @@ exports.exportOrdersExcel = async (req, res) => {
                 cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
             });
 
-            // ارتفاع و عرض خودکار
             sheet.eachRow({ includeEmpty: false }, row => {
                 let maxLines = 1;
                 row.eachCell(cell => {
@@ -233,20 +229,20 @@ exports.exportOrdersExcel = async (req, res) => {
                 row.height = maxLines * 20;
             });
 
-            // محاسبه عرض ستون‌ها
             sheet.columns.forEach(column => {
-                let maxLength = column.header.length;
-                column.eachCell({ includeEmpty: false }, cell => {
-                    if (cell.value) {
-                        const cellLength = cell.value.toString().length;
-                        if (cellLength > maxLength) maxLength = cellLength;
-                    }
-                });
-                column.width = Math.min(maxLength + 5, 50);
+                if (!column.width) {
+                    let maxLength = column.header.length;
+                    column.eachCell({ includeEmpty: false }, cell => {
+                        if (cell.value) {
+                            const cellLength = cell.value.toString().length;
+                            if (cellLength > maxLength) maxLength = cellLength;
+                        }
+                    });
+                    column.width = Math.min(maxLength + 5, 50);
+                }
             });
         });
 
-        // --- رنگ‌بندی وضعیت و تیک حسابداری ---
         orderSheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
             if (rowNumber === 1) return;
             const statusCell = row.getCell('status');
