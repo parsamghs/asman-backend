@@ -118,7 +118,7 @@ exports.exportOrdersExcel = async (req, res) => {
             { header: 'شماره پذیرش', key: 'reception_number' },
             { header: 'تاریخ پذیرش', key: 'reception_date' },
             { header: 'وضعیت خودرو', key: 'car_status' },
-            { header: 'شماره شاسی', key: 'chassis_number' },
+            { header: 'شماره شاسی', key: 'chassis_number', width:30 },
             { header: 'کارشناس پذیرش', key: 'admissions_specialist' },
             { header: 'سفارش‌ دهنده', key: 'orderer' }
         ];
