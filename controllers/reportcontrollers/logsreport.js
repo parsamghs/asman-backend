@@ -12,10 +12,10 @@ exports.exportLogsExcel = async (req, res) => {
     }
 
     try {
-        const { startDate, endDate, user_name } = req.query;
+        const { start_date, end_date, user_name } = req.query;
 
-        const startDateMiladi = startDate ? moment(startDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
-        const endDateMiladi = endDate ? moment(endDate, 'jYYYY/jMM/jDD').endOf('day').format('YYYY-MM-DD') : null;
+        const startDateMiladi = start_date ? moment(start_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
+        const endDateMiladi = end_date ? moment(end_date, 'jYYYY/jMM/jDD').endOf('day').format('YYYY-MM-DD') : null;
 
         const params = [];
         let whereClauses = [];
@@ -114,8 +114,8 @@ exports.exportLogsExcel = async (req, res) => {
         let fileName = `سوابق فعالیت`;
         if (user_name) {
             fileName += ` "${user_name}"`;}
-        if (startDate && endDate) {
-            fileName += ` از ${startDate} تا ${endDate}`;}
+        if (start_date && end_date) {
+            fileName += ` از ${start_date} تا ${end_date}`;}
         const encodedFileName = encodeURIComponent(fileName);
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
