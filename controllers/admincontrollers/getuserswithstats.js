@@ -37,7 +37,6 @@ exports.getUsersWithStatus = async (req, res) => {
       }
 
       return {
-        id: user.id,
         name: user.name,
         last_name: user.last_name,
         code_meli: user.code_meli.toString().padStart(10, '0'),
