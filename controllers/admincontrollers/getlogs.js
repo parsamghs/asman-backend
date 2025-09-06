@@ -16,10 +16,10 @@ exports.getLogs = async (req, res) => {
     const limit = parseInt(req.query.limit) || 300;
     const offset = (page - 1) * limit;
 
-    const { startDate, endDate, user_name } = req.query;
+    const { start_date, end_date, user_name } = req.query;
 
-    const startDateMiladi = startDate ? moment(startDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
-    const endDateMiladi = endDate ? moment(endDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
+    const startDateMiladi = start_date ? moment(start_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
+    const endDateMiladi = end_date ? moment(end_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
 
     const params = [];
     let whereClauses = [];
