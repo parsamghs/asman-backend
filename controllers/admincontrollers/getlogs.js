@@ -16,10 +16,10 @@ exports.getLogs = async (req, res) => {
     const limit = parseInt(req.query.limit) || 300;
     const offset = (page - 1) * limit;
 
-    const { startDate, endDate, user_name } = req.query;
+    const { start_date, end_date, user_name } = req.query;
 
-    const startDateMiladi = startDate ? moment(startDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
-    const endDateMiladi = endDate ? moment(endDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
+    const startDateMiladi = start_date ? moment(start_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
+    const endDateMiladi = enend_datedDate ? moment(end_date, 'jYYYY/jMM/jDD').format('YYYY-MM-DD') : null;
 
     const params = [];
     let whereClauses = [];
@@ -53,7 +53,7 @@ exports.getLogs = async (req, res) => {
 
     params.push(limit, offset);
     const dataQuery = `
-      SELECT id, log_time, action, message, user_id, user_name, phone_number
+      SELECT id, log_time, action, message, user_name, phone_number
       FROM logs
       ${whereSQL}
       ORDER BY log_time DESC
@@ -64,8 +64,6 @@ exports.getLogs = async (req, res) => {
     const logs = result.rows.map((log) => {
       const localMoment = moment(log.log_time).tz('Asia/Tehran');
       return {
-        id: log.id,
-        user_id: log.user_id,
         action: log.action,
         message: log.message,
         user_name: log.user_name,
