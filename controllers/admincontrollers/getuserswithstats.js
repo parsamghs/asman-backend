@@ -33,7 +33,7 @@ exports.getUsersWithStatus = async (req, res) => {
         isOnline = diffMinutes <= 5;
 
         lastActiveDate = localMoment.format('jYYYY/jMM/jDD');
-        lastActiveTime = localMoment.format('HH:mm:ss');
+        lastActiveTime = localMoment.format('HH:mm');
       }
 
       return {
