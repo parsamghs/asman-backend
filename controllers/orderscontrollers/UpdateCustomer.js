@@ -68,13 +68,6 @@ exports.updateOrder = async (req, res) => {
           const result = await client.query('SELECT phone_number FROM customers WHERE id = $1', [customerId]);
           customerPhone = result.rows[0]?.phone_number || 'نامشخص';
         }
-
-        await createLog(
-          req.user.id,
-          'ویرایش مشتری',
-          `اطلاعات مشتری "${updatedCustomerName}" ویرایش شد`,
-          customerPhone
-        );
       }
     }
 
