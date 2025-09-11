@@ -30,7 +30,7 @@ exports.addOrder = async (req, res) => {
     }
 
     if (chassis_number && chassis_number.trim().length > 40) {
-      return res.status(400).json({ message: `شماره شاسی نباید بیشتر از 20 کاراکتر باشد.` });
+      return res.status(400).json({ message: `شماره شاسی نباید بیشتر از 40 کاراکتر باشد.` });
     }
 
     const receptionDateResult = validateJalaliDate(reception_date, 'پذیرش');
