@@ -1,10 +1,7 @@
 const pool = require('../../db');
 const createLog = require('../logcontrollers/createlog');
 const { CONSTANTS } = require('../../utils/constants');
-const {
-  validateJalaliDate,
-  validateWithRegex
-} = require('../../utils/validation');
+const { validateJalaliDate, validateWithRegex } = require('../../utils/validation');
 const moment = require('moment-jalaali');
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
@@ -57,17 +54,9 @@ exports.updateOrder = async (req, res) => {
           customerValues
         );
 
-        if (customer.customer_name) {
-          updatedCustomerName = customer.customer_name;
-        } else {
-          const result = await client.query('SELECT customer_name FROM customers WHERE id = $1', [customerId]);
-          updatedCustomerName = result.rows[0]?.customer_name || 'N/A';
-        }
-
-        if (!customerPhone) {
-          const result = await client.query('SELECT phone_number FROM customers WHERE id = $1', [customerId]);
-          customerPhone = result.rows[0]?.phone_number || 'نامشخص';
-        }
+        const result = await client.query('SELECT customer_name, phone_number FROM customers WHERE id = $1', [customerId]);
+        updatedCustomerName = result.rows[0]?.customer_name || 'N/A';
+        if (!customerPhone) customerPhone = result.rows[0]?.phone_number || 'نامشخص';
       }
     }
 
@@ -79,7 +68,7 @@ exports.updateOrder = async (req, res) => {
           await client.query('ROLLBACK');
           return res.status(400).json({ message: receptionDateResult.message });
         }
-        reception.reception_date = receptionDateResult.date.format('YYYY-MM-DD');
+        reception.reception_date = receptionDateResult.date.format('YYYY-MM-DD'); // میلادی برای دیتابیس
       }
 
       if (reception.car_status && !CONSTANTS.car_status.includes(reception.car_status)) {
@@ -101,34 +90,12 @@ exports.updateOrder = async (req, res) => {
       if (receptionFields.length > 0) {
         receptionValues.push(reception_id, customerId);
         await client.query(
-          `UPDATE receptions SET ${receptionFields.join(', ')} 
-           WHERE id = $${idx++} AND customer_id = $${idx}`,
+          `UPDATE receptions SET ${receptionFields.join(', ')} WHERE id = $${idx++} AND customer_id = $${idx}`,
           receptionValues
         );
 
-        if (reception.reception_number) {
-          updatedReceptionNumber = reception.reception_number;
-        } else {
-          const result = await client.query('SELECT reception_number FROM receptions WHERE id = $1', [reception_id]);
-          updatedReceptionNumber = result.rows[0]?.reception_number || 'N/A';
-        }
-
-        if (!updatedCustomerName) {
-          const result = await client.query('SELECT customer_name FROM customers WHERE id = $1', [customerId]);
-          updatedCustomerName = result.rows[0]?.customer_name || 'N/A';
-        }
-
-        if (!customerPhone) {
-          const result = await client.query('SELECT phone_number FROM customers WHERE id = $1', [customerId]);
-          customerPhone = result.rows[0]?.phone_number || 'نامشخص';
-        }
-
-        await createLog(
-          req.user.id,
-          'ویرایش پذیرش',
-          `اطلاعات پذیرش شماره "${updatedReceptionNumber}" مربوط به مشتری "${updatedCustomerName}" ویرایش شد`,
-          customerPhone
-        );
+        const result = await client.query('SELECT reception_number FROM receptions WHERE id = $1', [reception_id]);
+        updatedReceptionNumber = result.rows[0]?.reception_number || 'N/A';
       }
     }
 
@@ -154,13 +121,31 @@ exports.updateOrder = async (req, res) => {
         }
       }
 
+      if (order.order_date) {
+        const orderDateResult = validateJalaliDate(order.order_date, 'تاریخ سفارش');
+        if (!orderDateResult.isValid) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: orderDateResult.message });
+        }
+        order.order_date = orderDateResult.date.format('YYYY-MM-DD'); // میلادی
+      }
+
+      if (order.estimated_arrival_date) {
+        const arrivalDateResult = validateJalaliDate(order.estimated_arrival_date, 'تاریخ پیش‌بینی تحویل');
+        if (!arrivalDateResult.isValid) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: arrivalDateResult.message });
+        }
+        order.estimated_arrival_date = arrivalDateResult.date.format('YYYY-MM-DD'); // میلادی
+      }
+
       if (order.appointment_date) {
-        const appointmentDateResult = validateJalaliDate(order.appointment_date, 'نوبت');
+        const appointmentDateResult = validateJalaliDate(order.appointment_date, 'تاریخ نوبت');
         if (!appointmentDateResult.isValid) {
           await client.query('ROLLBACK');
           return res.status(400).json({ message: appointmentDateResult.message });
         }
-        order.appointment_date = appointmentDateResult.date.format('YYYY-MM-DD');
+        order.appointment_date = appointmentDateResult.date.format('YYYY-MM-DD'); // میلادی
       }
 
       const orderFields = [];
@@ -175,31 +160,12 @@ exports.updateOrder = async (req, res) => {
       if (orderFields.length > 0) {
         orderValues.push(order_id, reception_id, customerId);
         await client.query(
-          `UPDATE orders SET ${orderFields.join(', ')} 
-           WHERE id = $${idx++} AND reception_id = $${idx++} AND customer_id = $${idx}`,
+          `UPDATE orders SET ${orderFields.join(', ')} WHERE id = $${idx++} AND reception_id = $${idx++} AND customer_id = $${idx}`,
           orderValues
         );
 
-        let pieceName = order.piece_name;
-        if (!pieceName) {
-          const result = await client.query('SELECT piece_name FROM orders WHERE id = $1', [order_id]);
-          pieceName = result.rows[0]?.piece_name || 'N/A';
-        }
-
-        if (!updatedReceptionNumber) {
-          const result = await client.query('SELECT reception_number FROM receptions WHERE id = $1', [reception_id]);
-          updatedReceptionNumber = result.rows[0]?.reception_number || 'N/A';
-        }
-
-        if (!updatedCustomerName) {
-          const result = await client.query('SELECT customer_name FROM customers WHERE id = $1', [customerId]);
-          updatedCustomerName = result.rows[0]?.customer_name || 'N/A';
-        }
-
-        if (!customerPhone) {
-          const result = await client.query('SELECT phone_number FROM customers WHERE id = $1', [customerId]);
-          customerPhone = result.rows[0]?.phone_number || 'نامشخص';
-        }
+        const result = await client.query('SELECT piece_name FROM orders WHERE id = $1', [order_id]);
+        const pieceName = result.rows[0]?.piece_name || 'N/A';
 
         await createLog(
           req.user.id,
@@ -212,7 +178,6 @@ exports.updateOrder = async (req, res) => {
 
     await client.query('COMMIT');
     res.json({ message: 'ویرایش با موفقیت انجام شد.' });
-
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('❌ Error in updateOrder:', err);
