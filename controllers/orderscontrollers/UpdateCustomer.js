@@ -68,7 +68,7 @@ exports.updateOrder = async (req, res) => {
           await client.query('ROLLBACK');
           return res.status(400).json({ message: receptionDateResult.message });
         }
-        reception.reception_date = receptionDateResult.date.format('YYYY-MM-DD'); // میلادی برای دیتابیس
+        reception.reception_date = receptionDateResult.date.format('YYYY-MM-DD');
       }
 
       if (reception.car_status && !CONSTANTS.car_status.includes(reception.car_status)) {
@@ -127,7 +127,7 @@ exports.updateOrder = async (req, res) => {
           await client.query('ROLLBACK');
           return res.status(400).json({ message: orderDateResult.message });
         }
-        order.order_date = orderDateResult.date.format('YYYY-MM-DD'); // میلادی
+        order.order_date = orderDateResult.date.format('YYYY-MM-DD');
       }
 
       if (order.estimated_arrival_date) {
@@ -136,7 +136,7 @@ exports.updateOrder = async (req, res) => {
           await client.query('ROLLBACK');
           return res.status(400).json({ message: arrivalDateResult.message });
         }
-        order.estimated_arrival_date = arrivalDateResult.date.format('YYYY-MM-DD'); // میلادی
+        order.estimated_arrival_date = arrivalDateResult.date.format('YYYY-MM-DD');
       }
 
       if (order.appointment_date) {
@@ -145,7 +145,7 @@ exports.updateOrder = async (req, res) => {
           await client.query('ROLLBACK');
           return res.status(400).json({ message: appointmentDateResult.message });
         }
-        order.appointment_date = appointmentDateResult.date.format('YYYY-MM-DD'); // میلادی
+        order.appointment_date = appointmentDateResult.date.format('YYYY-MM-DD');
       }
 
       const orderFields = [];
