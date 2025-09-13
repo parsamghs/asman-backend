@@ -14,7 +14,6 @@ function validateJalaliDate(dateStr, fieldName) {
   return { isValid: true, date };
 }
 
-
 function validateDeliveryAfterOrder(orderDateStr, deliveryDateStr) {
   const orderDate = moment(orderDateStr, 'jYYYY/jMM/jDD', true);
   const deliveryDate = moment(deliveryDateStr, 'jYYYY/jMM/jDD', true);
