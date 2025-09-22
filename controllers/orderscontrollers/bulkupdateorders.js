@@ -43,7 +43,7 @@ exports.updateMultipleOrderStatus = async (req, res) => {
 
         let convertedAppointmentDate = appointment_date;
         if (new_status === 'نوبت داده شد' && appointment_date) {
-            const m = momentTZ.tz(appointment_date, 'jYYYY/jMM/jDD', 'Asia/Tehran');
+            const m = moment(appointment_date, 'jYYYY/jMM/jDD');
             if (!m.isValid()) {
                 return res.status(400).json({ message: 'تاریخ نوبت‌دهی وارد شده معتبر نیست.' });
             }
