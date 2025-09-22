@@ -183,7 +183,7 @@ exports.getAllOrders = async (req, res) => {
         market_phone: row.market_phone,
         estimated_arrival_days: row.estimated_arrival_days,
         status: row.status,
-        appointment_date: row.appointment_date ? moment(row.appointment_date, 'YYYY-MM-DD').format('jYYYY/jMM/jDD') : null,
+        appointment_date: row.appointment_date ? moment(row.appointment_date).format('jYYYY/jMM/jDD') : null,
         appointment_time: row.appointment_time ? row.appointment_time.substring(0, 5) : null,
         description: row.description,
         all_description: row.all_description,
