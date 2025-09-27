@@ -183,9 +183,20 @@ exports.updatestatus = async (req, res) => {
       newAppointmentTime = appointment_time.trim();
     }
 
+    if (status === 'تامین نمایندگی') {
+      newStatus = 'در انتظار دریافت';
+      successMessages.push('وضعیت سفارش به "در انتظار دریافت" تغییر کرد.');
+
+      var dealerSupply = true;
+      var orderChannel = 'بازار آزاد';
+    } else {
+      var dealerSupply = null;
+      var orderChannel = null;
+    }
+
     const updateQuery = `
   UPDATE orders
-  SET
+SET
   status = COALESCE($1, status),
   delivery_date = COALESCE($2, delivery_date),
   description = CASE
@@ -200,7 +211,9 @@ exports.updatestatus = async (req, res) => {
   appointment_time = COALESCE($6, appointment_time),
   cancellation_date = COALESCE($7, cancellation_date),
   cancellation_time = COALESCE($8, cancellation_time),
-  final_order_number = COALESCE($9, final_order_number)
+  final_order_number = COALESCE($9, final_order_number),
+  dealer_supply = COALESCE($11, dealer_supply),
+  order_channel = COALESCE($12, order_channel)
 WHERE id = $10;`;
 
     const updateResult = await client.query(updateQuery, [
@@ -213,8 +226,11 @@ WHERE id = $10;`;
       newCancellationDate,
       newCancellationTime,
       newFinalOrderNumber,
-      orderId
+      orderId,
+      dealerSupply,
+      orderChannel
     ]);
+
 
     if (updateResult.rowCount === 0) {
       await client.query('ROLLBACK');
@@ -223,9 +239,16 @@ WHERE id = $10;`;
       });
     }
 
+    let isDealerSupply = false;
+    if (status === 'تامین نمایندگی') {
+      isDealerSupply = true;
+    }
+
     let logMessage = `سفارش مشتری "${customerName}" ویرایش شد`;
 
-    if (newAllDescription) {
+    if (isDealerSupply) {
+      logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" توسط نمایندگی تامین می‌شود`;
+    } else if (newAllDescription) {
       logMessage = `توضیحات "${newAllDescription}" به سفارش ${orderInfoRes.rows[0].piece_name || 'نامشخص'} مربوط به مشتری ${customerName} اضافه شد`;
     } else if (newStatus) {
       switch (newStatus) {
@@ -242,7 +265,7 @@ WHERE id = $10;`;
           logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" به دلیل "${newDescription || 'نداشتن توضیحات'}" توسط حسابدار پرداخت نشد`;
           break;
         case 'در انتظار نوبت دهی':
-          logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}"توسط انباردار دریافت شد و در انتظار نوبت دهی است`;
+          logMessage = `سفارش قطعه‌ی "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مربوط به مشتری "${customerName}" توسط انباردار دریافت شد و در انتظار نوبت دهی است`;
           break;
         case 'دریافت شد':
           logMessage = `سفارش "${orderInfoRes.rows[0].piece_name || 'نامشخص'}" مشتری "${customerName}" توسط انباردار دریافت شد`;

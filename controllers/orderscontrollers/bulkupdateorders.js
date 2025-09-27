@@ -85,6 +85,14 @@ exports.updateMultipleOrderStatus = async (req, res) => {
             }
         }
 
+        let isDealerSupply = false;
+        let effectiveStatus = new_status;
+
+        if (new_status === 'تامین نمایندگی') {
+            isDealerSupply = true;
+            effectiveStatus = 'در انتظار دریافت';
+        }
+
         await client.query('BEGIN');
 
         const isAppointmentStatus = new_status === 'نوبت داده شد';
@@ -99,17 +107,19 @@ exports.updateMultipleOrderStatus = async (req, res) => {
                  description = CASE
                      WHEN $2::text IS NOT NULL THEN CONCAT_WS(' / ', description::text, $2::text)
                      ELSE description
-                 END
+                 END,
+                 dealer_supply = CASE WHEN $9 THEN true ELSE dealer_supply END
              WHERE id = ANY($5::int[])`,
             [
-                new_status,
+                effectiveStatus,
                 description,
                 deliveryDate,
                 final_order_number?.trim() || null,
                 order_ids,
                 convertedAppointmentDate,
                 appointment_time,
-                isAppointmentStatus
+                isAppointmentStatus,
+                isDealerSupply
             ]
         );
 
@@ -157,47 +167,51 @@ exports.updateMultipleOrderStatus = async (req, res) => {
             const phone = data.phone;
             let logMessage = '';
 
-            switch (new_status) {
-                case 'در انتظار تائید حسابداری':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط شرکت تأیید شد و در انتظار تائید حسابداری است`;
-                    break;
-                case 'لغو توسط شرکت':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط شرکت لغو شد`;
-                    break;
-                case 'در انتظار دریافت':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط حسابدار پرداخت شد و در انتظار دریافت است`;
-                    break;
-                case 'عدم پرداخت حسابداری':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط حسابدار پرداخت نشد`;
-                    break;
-                case 'در انتظار نوبت دهی':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط حسابدار پرداخت شد و در انتظار نوبت دهی است`;
-                    break;
-                case 'دریافت شد':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط انباردار دریافت شد`;
-                    break;
-                case 'عدم دریافت':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" دریافت نشد`;
-                    break;
-                case 'نوبت داده شد':
-                    let appointmentShamsi = 'نامشخص';
-                    if (convertedAppointmentDate) {
-                        appointmentShamsi = moment(convertedAppointmentDate, 'YYYY-MM-DD').format('jYYYY/jMM/jDD');
-                    }
-                    const appointmentTime = appointment_time || 'نامشخص';
-                    logMessage = `برای سفارشات ${piecesText} مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi}" ساعت "${appointmentTime}" نوبت‌گذاری شد`;
-                    break;
-                case 'انصراف مشتری':
-                    logMessage = `مشتری "${customerName}" از ادامه‌ی سفارشات ${piecesText} به دلیل "${description || 'بدون توضیحات'}" انصراف داد`;
-                    break;
-                case 'تحویل شد':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" تحویل داده شد`;
-                    break;
-                case 'تحویل نشد':
-                    logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" تحویل داده نشد`;
-                    break;
-                default:
-                    logMessage = `وضعیت سفارشات ${piecesText} مربوط به مشتری "${customerName}" به "${new_status}" تغییر یافت`;
+            if (isDealerSupply) {
+                logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط نمایندگی تأمین می‌شود`;
+            } else {
+                switch (effectiveStatus) {
+                    case 'در انتظار تائید حسابداری':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط شرکت تأیید شد و در انتظار تائید حسابداری است`;
+                        break;
+                    case 'لغو توسط شرکت':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط شرکت لغو شد`;
+                        break;
+                    case 'در انتظار دریافت':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط حسابدار پرداخت شد و در انتظار دریافت است`;
+                        break;
+                    case 'عدم پرداخت حسابداری':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط حسابدار پرداخت نشد`;
+                        break;
+                    case 'در انتظار نوبت دهی':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" توسط حسابدار پرداخت شد و در انتظار نوبت دهی است`;
+                        break;
+                    case 'دریافت شد':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" توسط انباردار دریافت شد`;
+                        break;
+                    case 'عدم دریافت':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" دریافت نشد`;
+                        break;
+                    case 'نوبت داده شد':
+                        let appointmentShamsi = 'نامشخص';
+                        if (convertedAppointmentDate) {
+                            appointmentShamsi = moment(convertedAppointmentDate, 'YYYY-MM-DD').format('jYYYY/jMM/jDD');
+                        }
+                        const appointmentTime = appointment_time || 'نامشخص';
+                        logMessage = `برای سفارشات ${piecesText} مربوط به مشتری "${customerName}" در تاریخ "${appointmentShamsi}" ساعت "${appointmentTime}" نوبت‌گذاری شد`;
+                        break;
+                    case 'انصراف مشتری':
+                        logMessage = `مشتری "${customerName}" از ادامه‌ی سفارشات ${piecesText} به دلیل "${description || 'بدون توضیحات'}" انصراف داد`;
+                        break;
+                    case 'تحویل شد':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" تحویل داده شد`;
+                        break;
+                    case 'تحویل نشد':
+                        logMessage = `سفارشات ${piecesText} مربوط به مشتری "${customerName}" به دلیل "${description || 'بدون توضیحات'}" تحویل داده نشد`;
+                        break;
+                    default:
+                        logMessage = `وضعیت سفارشات ${piecesText} مربوط به مشتری "${customerName}" به "${new_status}" تغییر یافت`;
+                }
             }
 
             await createLog(req.user.id, 'به‌روزرسانی گروهی سفارش‌ها', logMessage, phone);
