@@ -3,6 +3,7 @@ const categoryTableMap = {
   'مدیران خودرو': 'mvm_parts_id',
   'تویوتا': 'toyota_parts_id',
   'ماموت':'mammut_parts_id',
+  'کرمان موتور':'kermanmotor_parts_id',
   'تست':'test_parts_id'
 
 };
