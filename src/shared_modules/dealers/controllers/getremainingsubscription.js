@@ -1,4 +1,4 @@
-const pool = require('../../../../core/config/db');
+const pool = require('../../../core/config/db');
 
 exports.getRemainingSubscription = async (req, res) => {
   try {
