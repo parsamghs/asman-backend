@@ -1,7 +1,7 @@
 const pool = require('../../db');
 const createLog = require('../logcontrollers/createlog');
 const { CONSTANTS } = require('../../utils/constants');
-const { validateJalaliDate, validateWithRegex } = require('../../utils/constants');
+const { validateJalaliDate, validateWithRegex } = require('../../utils/validation');
 const moment = require('moment-jalaali');
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
@@ -27,9 +27,7 @@ exports.updateOrder = async (req, res) => {
 
     let updatedCustomerName = null;
     let customerPhone = null;
-    let updatedReceptionNumber = null;
 
-    // --- ویرایش مشتری
     if (customer) {
       if (customer.phone_number) {
         const result = validateWithRegex('phone', customer.phone_number);
@@ -62,7 +60,7 @@ exports.updateOrder = async (req, res) => {
       }
     }
 
-    // --- ویرایش پذیرش
+    let updatedReceptionNumber = null;
     if (reception) {
       if (reception.reception_date) {
         const receptionDateResult = validateJalaliDate(reception.reception_date, 'پذیرش');
@@ -101,7 +99,6 @@ exports.updateOrder = async (req, res) => {
       }
     }
 
-    // --- ویرایش سفارش
     if (order) {
       if (order.number_of_pieces !== undefined) {
         if (!Number.isInteger(order.number_of_pieces) || order.number_of_pieces <= 0) {
@@ -169,24 +166,6 @@ exports.updateOrder = async (req, res) => {
 
         const result = await client.query('SELECT piece_name FROM orders WHERE id = $1', [order_id]);
         const pieceName = result.rows[0]?.piece_name || 'N/A';
-
-        // --- Fallback برای گرفتن اسم مشتری و شماره پذیرش اگر هنوز null باشن
-        if (!updatedCustomerName) {
-          const cust = await client.query(
-            'SELECT customer_name, phone_number FROM customers WHERE id = $1',
-            [customerId]
-          );
-          updatedCustomerName = cust.rows[0]?.customer_name || 'N/A';
-          if (!customerPhone) customerPhone = cust.rows[0]?.phone_number || 'نامشخص';
-        }
-
-        if (!updatedReceptionNumber && reception_id) {
-          const rec = await client.query(
-            'SELECT reception_number FROM receptions WHERE id = $1',
-            [reception_id]
-          );
-          updatedReceptionNumber = rec.rows[0]?.reception_number || 'N/A';
-        }
 
         await createLog(
           req.user.id,
