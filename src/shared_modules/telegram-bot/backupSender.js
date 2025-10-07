@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
-const DB_URL = process.env.DEV_DB_URL;
+const DB_URL = process.env.PROD_DB_URL;
 
 async function sendBackupToTelegram() {
   console.log("📤 Creating PostgreSQL backup...");
