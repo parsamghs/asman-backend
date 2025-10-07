@@ -1,5 +1,9 @@
 const { exec } = require("child_process");
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+const FormData = require("form-data");
 require("dotenv").config();
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -10,7 +14,9 @@ async function sendBackupToTelegram() {
   console.log("📤 Creating PostgreSQL backup...");
 
   try {
-    const dumpCommand = `pg_dump "${DB_URL}"`;
+    const dumpFilePath = path.join(os.tmpdir(), `db_backup_${Date.now()}.sql`);
+
+    const dumpCommand = `pg_dump "${DB_URL}" -f "${dumpFilePath}"`;
 
     exec(dumpCommand, { maxBuffer: 1024 * 1024 * 100 }, async (error, stdout, stderr) => {
       if (error) {
@@ -21,14 +27,9 @@ async function sendBackupToTelegram() {
         console.warn("⚠️ pg_dump warning:", stderr);
       }
 
-      const fileBuffer = Buffer.from(stdout, "utf-8");
-
       const formData = new FormData();
       formData.append("chat_id", CHAT_ID);
-      formData.append("document", fileBuffer, {
-        filename: `db_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.sql`,
-        contentType: "application/sql",
-      });
+      formData.append("document", fs.createReadStream(dumpFilePath));
 
       console.log("📨 Sending backup to Telegram...");
 
@@ -37,6 +38,8 @@ async function sendBackupToTelegram() {
       });
 
       console.log("✅ Backup sent successfully to Telegram!");
+
+      fs.unlinkSync(dumpFilePath);
     });
   } catch (err) {
     console.error("❌ Error sending backup:", err.message);
