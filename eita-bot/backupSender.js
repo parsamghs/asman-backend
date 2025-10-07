@@ -5,14 +5,21 @@ const fs = require("fs");
 require("dotenv").config();
 
 const TOKEN = process.env.EITA_TOKEN;
-const CHAT_ID = "server_backup";
+const CHAT_ID = process.env.EITA_CHAT_ID;
 const DB_URL = process.env.PROD_DB_URL;
+
+function getFormattedDate() {
+  const date = new Date();
+  const fa = date.toLocaleDateString("fa-IR");
+  return fa.replace(/\//g, "-");
+}
 
 async function sendBackupToEita() {
   console.log("📤 Creating PostgreSQL binary backup...");
 
   try {
-    const outputFile = "/tmp/db_backup.dump"; // فایل موقت روی سرور
+    const date = getFormattedDate();
+    const outputFile = `/tmp/db_backup_${date}.dump`;
     const dumpCommand = `pg_dump --format=custom --file="${outputFile}" "${DB_URL}"`;
 
     exec(dumpCommand, async (error, stdout, stderr) => {
@@ -26,8 +33,8 @@ async function sendBackupToEita() {
 
       const formData = new FormData();
       formData.append("chat_id", CHAT_ID);
-      formData.append("file", fs.createReadStream(outputFile), "db_backup.dump");
-      formData.append("caption", "🧱 بکاپ باینری برای pgAdmin");
+      formData.append("file", fs.createReadStream(outputFile), `db_backup_${date}.dump`);
+      formData.append("caption", `📦 بکاپ از دیتابیس تا تاریخ ${date}`);
 
       const url = `https://eitaayar.ir/api/${TOKEN}/sendFile`;
 
@@ -37,12 +44,12 @@ async function sendBackupToEita() {
       });
 
       if (res.data.ok) {
-        console.log("✅ Backup sent successfully to Eita!");
+        console.log(`✅ Backup sent successfully to Eita! (${date})`);
       } else {
         console.error("❌ Eita API error:", res.data);
       }
 
-      fs.unlinkSync(outputFile); // پاک‌کردن فایل موقت بعد از ارسال
+      fs.unlinkSync(outputFile);
     });
   } catch (err) {
     console.error("❌ Error sending backup:", err.message);

@@ -1,14 +1,13 @@
+const cron = require("node-cron");
 const sendBackupToEita = require("./backupSender");
 
 function scheduleBackup() {
   console.log("🕒 Eita backup scheduler started...");
 
-  const interval = 2 * 60 * 1000;
-
-  setInterval(() => {
-    console.log("📤 Sending scheduled database backup...");
+  cron.schedule("0 3 */3 * *", () => {
+    console.log("📤 Sending scheduled database backup (every 3 days)...");
     sendBackupToEita();
-  }, interval);
+  });
 
   sendBackupToEita();
 }
