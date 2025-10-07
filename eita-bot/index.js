@@ -1,4 +1,4 @@
-const scheduleBackup = require("./scheduler");
+const scheduleBackup = require("./schedule");
 
 function initEitaBot() {
   console.log("📦 Eita backup service started...");
