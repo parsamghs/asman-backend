@@ -41,5 +41,4 @@ app.use('/api/date', dateroute);
 
 app.listen(port, () => {
   console.log(`Server is running`);
-  require("./telegram-bot")();
 });
