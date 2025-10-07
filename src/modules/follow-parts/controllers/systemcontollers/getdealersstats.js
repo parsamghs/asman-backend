@@ -6,13 +6,13 @@ exports.getDealersStats = async (req, res) => {
       SELECT 
         d.id AS dealer_id,
         d.dealer_name,
+        d.dealer_code,
         d.remaining_subscription,
         l.id AS user_id,
         l.name,
         l.last_name,
         l.role,
-        l.phone_number,
-        us.last_active
+        l.code_meli
       FROM dealers d
       LEFT JOIN login l ON l.dealer_id = d.id
       LEFT JOIN users_stats us ON us.id = l.id
@@ -29,6 +29,7 @@ exports.getDealersStats = async (req, res) => {
         grouped[row.dealer_id] = {
           dealer_id: row.dealer_id,
           dealer_name: row.dealer_name,
+          dealer_code:row.dealer_code,
           remaining_subscription: row.remaining_subscription,
           total_users: 0,
           online_count: 0,
@@ -46,8 +47,7 @@ exports.getDealersStats = async (req, res) => {
           name: row.name,
           last_name: row.last_name,
           role: row.role,
-          phone_number: row.phone_number,
-          online: isOnline,
+          code_meli:row.code_meli,
         });
 
         grouped[row.dealer_id].total_users += 1;
