@@ -16,7 +16,7 @@ function activateLogSender() {
     originalWarn.apply(console, args);
   };
 
-  console.log("📡 Eita log sender activated.");
+  console.log('\x1b[32m%s\x1b[0m','Eita log sender activated.');
 }
 
 module.exports = activateLogSender;

@@ -42,6 +42,6 @@ app.use('/api/system', systemroute);
 app.use('/api/date', dateroute);
 
 app.listen(port, () => {
-  console.log(`Server is running`);
+  console.log('\x1b[32m%s\x1b[0m','server is runnig');
   require("./eita-bot")();
 });

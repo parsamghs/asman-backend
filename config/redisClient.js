@@ -9,7 +9,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 
   client.connect()
-    .then(() => console.log('✅ Redis client connected'))
+    .then(() => console.log('\x1b[32m%s\x1b[0m','Redis client connected'))
     .catch(err => console.error('❌ Redis connection error:', err));
 
   client.on('error', err => {

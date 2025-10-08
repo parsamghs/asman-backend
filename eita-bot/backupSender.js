@@ -15,7 +15,6 @@ function getFormattedDate() {
 }
 
 async function sendBackupToEita() {
-  console.log("📤 Creating PostgreSQL binary backup...");
 
   try {
     const date = getFormattedDate();
@@ -29,12 +28,10 @@ async function sendBackupToEita() {
       }
       if (stderr) console.warn("⚠️ pg_dump warning:", stderr);
 
-      console.log("📦 Backup created, preparing to send...");
-
       const formData = new FormData();
       formData.append("chat_id", CHAT_ID);
       formData.append("file", fs.createReadStream(outputFile), `db_backup_${date}.dump`);
-      formData.append("caption", `📦 بکاپ از دیتابیس تا تاریخ ${date}`);
+      formData.append("caption", `بکاپ از دیتابیس تا تاریخ ${date}`);
 
       const url = `https://eitaayar.ir/api/${TOKEN}/sendFile`;
 
@@ -44,7 +41,7 @@ async function sendBackupToEita() {
       });
 
       if (res.data.ok) {
-        console.log(`✅ Backup sent successfully to Eita! (${date})`);
+        console.log('\x1b[32m%s\x1b[0m',`Backup sent successfully to Eita! (${date})`);
       } else {
         console.error("❌ Eita API error:", res.data);
       }
