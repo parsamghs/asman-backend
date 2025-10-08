@@ -40,9 +40,7 @@ function requestLogger(req, res, next) {
           'SELECT dealer_code FROM dealers WHERE id = $1',
           [req.user.dealer_id]
         );
-        if (rows.length) {
-          dealerCode = rows[0].dealer_code;
-        }
+        if (rows.length) dealerCode = rows[0].dealer_code;
       } catch (err) {
         logger.error('❌ خطا در گرفتن dealer_code:', err.message);
       }
@@ -63,11 +61,13 @@ function requestLogger(req, res, next) {
           dealerCode
         ]
       );
+
+      logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName} - ${dealerCode} - ${Math.round(durationMs)}ms - ${ip}`);
+
     } catch (err) {
       logger.error('❌ خطا در ذخیره لاگ در دیتابیس:', err.message);
     }
   });
-
 
   next();
 }
