@@ -41,6 +41,15 @@ app.use('/api/dealers', dealersroute);
 app.use('/api/system', systemroute);
 app.use('/api/date', dateroute);
 
+app.use((err, req, res, next) => {
+  res.locals.errorMessage = err.message || 'Server Error';
+  const status = err.status || 500;
+  res.status(status).json({
+    success: false,
+    message: err.message || 'Server Error'
+  });
+});
+
 app.listen(port, () => {
   console.log('\x1b[32m%s\x1b[0m','server is runnig');
   require("./eita-bot")();
