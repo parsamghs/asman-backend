@@ -10,6 +10,8 @@ const requestLogger = require('./middlewares/loggerMiddleware');
 require('./cronjobs/updatearrivaldays');
 require('./cronjobs/updatesubscription');
 
+require('./eita-bot/logsender/consoleInterceptor')();
+
 const authRoutes = require('./routes/AuthCentralRoute');
 const orderRoutes = require('./routes/OrdersCentralRoute');
 const adminRoutes = require('./routes/AdminCentralRoute');
