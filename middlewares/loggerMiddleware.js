@@ -1,9 +1,12 @@
 const logger = require('../config/winston');
 const axios = require('axios');
+const pool = require('../db');
 
 function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];
-  const rawIp = forwarded ? forwarded.split(',')[0].trim() : req.connection.remoteAddress || req.ip;
+  const rawIp = forwarded
+    ? forwarded.split(',')[0].trim()
+    : req.connection.remoteAddress || req.ip;
   return rawIp.replace(/^::ffff:/, '');
 }
 
@@ -27,27 +30,44 @@ function requestLogger(req, res, next) {
     const durationMs = Number(durationNs) / 1e6;
 
     const ip = getClientIp(req);
-    const dealerId = req.user?.dealer_id || 'Unknown';
     const dealerName = req.user?.dealer_name || 'Unknown';
 
-    let location = 'Unknown';
+    let dealerCode = 'Unknown';
 
-    if (
-      ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('172.') ||
-      ip.startsWith('127.') || ip.startsWith('100.') || ip === '::1'
-    ) {
-      logger.info(
-        `${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName}`
-      );
-      return;
+    if (req.user?.dealer_id) {
+      try {
+        const { rows } = await pool.query(
+          'SELECT dealer_code FROM dealers WHERE id = $1',
+          [req.user.dealer_id]
+        );
+        if (rows.length) {
+          dealerCode = rows[0].dealer_code;
+        }
+      } catch (err) {
+        logger.error('❌ خطا در گرفتن dealer_code:', err.message);
+      }
     }
 
-    location = await logLocation(ip);
-
-    logger.info(
-      `${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName}`
-    );
+    try {
+      await pool.query(
+        `INSERT INTO server_logs 
+       (method, path, status_code, ip, duration, dealer_name, dealer_code)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          req.method,
+          req.originalUrl,
+          res.statusCode,
+          ip,
+          Math.round(durationMs),
+          dealerName,
+          dealerCode
+        ]
+      );
+    } catch (err) {
+      logger.error('❌ خطا در ذخیره لاگ در دیتابیس:', err.message);
+    }
   });
+
 
   next();
 }

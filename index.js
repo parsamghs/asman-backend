@@ -10,7 +10,7 @@ const requestLogger = require('./middlewares/loggerMiddleware');
 require('./cronjobs/updatearrivaldays');
 require('./cronjobs/updatesubscription');
 
-require('./eita-bot/logsender/consoleInterceptor')();
+// require('./eita-bot/logsender/consoleInterceptor')();
 
 const authRoutes = require('./routes/AuthCentralRoute');
 const orderRoutes = require('./routes/OrdersCentralRoute');
@@ -43,5 +43,5 @@ app.use('/api/date', dateroute);
 
 app.listen(port, () => {
   console.log(`Server is running`);
-  require("./eita-bot")();
+  // require("./eita-bot")();
 });
