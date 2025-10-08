@@ -62,7 +62,7 @@ function requestLogger(req, res, next) {
         ]
       );
 
-      logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName} - ${dealerCode} - ${Math.round(durationMs)}ms - ${ip}`);
+      logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName} - ${dealerCode} - ${Math.round(durationMs)}ms`);
 
     } catch (err) {
       logger.error('❌ خطا در ذخیره لاگ در دیتابیس:', err.message);
