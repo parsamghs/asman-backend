@@ -2,26 +2,6 @@ const logger = require('../config/winston');
 const axios = require('axios');
 const pool = require('../db');
 
-function getClientIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  const rawIp = forwarded
-    ? forwarded.split(',')[0].trim()
-    : req.connection.remoteAddress || req.ip;
-  return rawIp.replace(/^::ffff:/, '');
-}
-
-async function logLocation(ip) {
-  try {
-    const { data } = await axios.get(`https://ipwho.is/${ip}`);
-    if (data.success) {
-      return `${data.city}, ${data.region}, ${data.country}`;
-    }
-    return 'Unknown';
-  } catch (err) {
-    return 'GeoIP Error';
-  }
-}
-
 function requestLogger(req, res, next) {
   const start = process.hrtime.bigint();
 
@@ -29,7 +9,6 @@ function requestLogger(req, res, next) {
     const durationNs = process.hrtime.bigint() - start;
     const durationMs = Number(durationNs) / 1e6;
 
-    const ip = getClientIp(req);
     const dealerName = req.user?.dealer_name || 'Unknown';
 
     let dealerCode = 'Unknown';
@@ -49,13 +28,12 @@ function requestLogger(req, res, next) {
     try {
       await pool.query(
         `INSERT INTO server_logs 
-       (method, path, status_code, ip, duration, dealer_name, dealer_code)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+       (method, path, status_code, duration, dealer_name, dealer_code)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           req.method,
           req.originalUrl,
           res.statusCode,
-          ip,
           Math.round(durationMs),
           dealerName,
           dealerCode
