@@ -23,7 +23,6 @@ const reportsroute = require('./routes/ReportsCentralRoute');
 const dealersroute = require('./routes/DealersCentralRoute');
 const systemroute = require('./routes/SystemCentralRoute');
 const dateroute = require('./routes/DateCentralRoutes');
-const serverroute = require('./routes/ServerCentralRoute');
 
 const app = express();
 
@@ -44,7 +43,6 @@ app.use('/api/reports', reportsroute);
 app.use('/api/dealers', dealersroute);
 app.use('/api/system', systemroute);
 app.use('/api/date', dateroute);
-app.use('/api/server', serverroute);
 
 
 const server = http.createServer(app);
