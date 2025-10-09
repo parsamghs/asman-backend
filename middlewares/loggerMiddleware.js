@@ -10,7 +10,6 @@ function requestLogger(req, res, next) {
     const durationMs = Number(durationNs) / 1e6;
 
     const dealerName = req.user?.dealer_name || 'Unknown';
-
     let dealerCode = 'Unknown';
 
     if (req.user?.dealer_id) {
@@ -25,11 +24,16 @@ function requestLogger(req, res, next) {
       }
     }
 
+    if (dealerName === 'Unknown' || dealerCode === 'Unknown') {
+      logger.info(`لاگ ذخیره نشد به دلیل Unknown بودن dealer: ${dealerName} / ${dealerCode}`);
+      return;
+    }
+
     try {
       await pool.query(
         `INSERT INTO server_logs 
-       (method, path, status_code, duration, dealer_name, dealer_code)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+         (method, path, status_code, duration, dealer_name, dealer_code)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           req.method,
           req.originalUrl,
