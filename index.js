@@ -4,8 +4,11 @@ require('dotenv').config({
 
 const express = require('express');
 const cors = require('cors');
-const pool = require('./db');
-const requestLogger = require('./middlewares/loggerMiddleware'); 
+const http = require('http');
+const { Server } = require('socket.io');
+
+const requestLogger = require('./middlewares/loggerMiddleware');
+const setupSocket = require('./socket');
 
 require('./cronjobs/updatearrivaldays');
 require('./cronjobs/updatesubscription');
@@ -20,6 +23,7 @@ const reportsroute = require('./routes/ReportsCentralRoute');
 const dealersroute = require('./routes/DealersCentralRoute');
 const systemroute = require('./routes/SystemCentralRoute');
 const dateroute = require('./routes/DateCentralRoutes');
+const serverroute = require('./routes/ServerCentralRoute');
 
 const app = express();
 
@@ -30,7 +34,7 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-app.use(requestLogger); 
+app.use(requestLogger);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
@@ -40,9 +44,19 @@ app.use('/api/reports', reportsroute);
 app.use('/api/dealers', dealersroute);
 app.use('/api/system', systemroute);
 app.use('/api/date', dateroute);
+app.use('/api/server', serverroute);
 
 
-app.listen(port, () => {
-  console.log('\x1b[32m%s\x1b[0m','server is runnig');
+const server = http.createServer(app);
+const io = new Server(server, {
+  path: '/ws/server-stats',
+  cors: { origin: '*' }
+});
+
+setupSocket(io);
+
+server.listen(port, () => {
+  console.log('\x1b[32m%s\x1b[0m', 'Server is running');
   require("./eita-bot")();
 });
+

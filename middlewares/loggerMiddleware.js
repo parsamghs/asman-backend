@@ -1,5 +1,5 @@
 const logger = require('../config/winston');
-const axios = require('axios');
+const socketEvents = require('../socket/socketevents');
 const pool = require('../db');
 
 function requestLogger(req, res, next) {
@@ -21,7 +21,7 @@ function requestLogger(req, res, next) {
         );
         if (rows.length) dealerCode = rows[0].dealer_code;
       } catch (err) {
-        logger.error('❌ خطا در گرفتن dealer_code:', err.message);
+        logger.error('خطا در گرفتن dealer_code:', err.message);
       }
     }
 
@@ -40,10 +40,12 @@ function requestLogger(req, res, next) {
         ]
       );
 
+      socketEvents.emit('serverLogsUpdated');
+
       logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${dealerName} - ${dealerCode} - ${Math.round(durationMs)}ms`);
 
     } catch (err) {
-      logger.error('❌ خطا در ذخیره لاگ در دیتابیس:', err.message);
+      logger.error('خطا در ذخیره لاگ در دیتابیس:', err.message);
     }
   });
 
