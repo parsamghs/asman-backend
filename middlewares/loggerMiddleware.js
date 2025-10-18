@@ -23,11 +23,7 @@ function requestLogger(req, res, next) {
         logger.error('خطا در گرفتن dealer_code:', err.message);
       }
     }
-
-    if (dealerName === 'Unknown' || dealerCode === 'Unknown') {
-      logger.info(`لاگ ذخیره نشد به دلیل Unknown بودن dealer: ${dealerName} / ${dealerCode}`);
-      return;
-    }
+    
 
     try {
       await pool.query(
