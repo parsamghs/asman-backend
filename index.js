@@ -47,7 +47,7 @@ app.use('/api/date', dateroute);
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  path: '/ws/server-stats',
+//   path: '/ws/server-stats',
   cors: { origin: '*' }
 });
 
