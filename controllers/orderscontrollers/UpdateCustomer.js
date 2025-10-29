@@ -25,9 +25,6 @@ exports.updateOrder = async (req, res) => {
 
     await client.query('BEGIN');
 
-    let updatedCustomerName = null;
-    let customerPhone = null;
-
     if (customer) {
       if (customer.phone_number) {
         const result = validateWithRegex('phone', customer.phone_number);
@@ -35,7 +32,6 @@ exports.updateOrder = async (req, res) => {
           await client.query('ROLLBACK');
           return res.status(400).json({ message: result.message });
         }
-        customerPhone = customer.phone_number;
       }
 
       const customerFields = [];
@@ -53,14 +49,9 @@ exports.updateOrder = async (req, res) => {
           `UPDATE customers SET ${customerFields.join(', ')} WHERE id = $${idx}`,
           customerValues
         );
-
-        const result = await client.query('SELECT customer_name, phone_number FROM customers WHERE id = $1', [customerId]);
-        updatedCustomerName = result.rows[0]?.customer_name || 'N/A';
-        if (!customerPhone) customerPhone = result.rows[0]?.phone_number || 'نامشخص';
       }
     }
 
-    let updatedReceptionNumber = null;
     if (reception) {
       if (reception.reception_date) {
         const receptionDateResult = validateJalaliDate(reception.reception_date, 'پذیرش');
@@ -93,9 +84,6 @@ exports.updateOrder = async (req, res) => {
           `UPDATE receptions SET ${receptionFields.join(', ')} WHERE id = $${idx++} AND customer_id = $${idx}`,
           receptionValues
         );
-
-        const result = await client.query('SELECT reception_number FROM receptions WHERE id = $1', [reception_id]);
-        updatedReceptionNumber = result.rows[0]?.reception_number || 'N/A';
       }
     }
 
@@ -103,7 +91,7 @@ exports.updateOrder = async (req, res) => {
       if (order.number_of_pieces !== undefined) {
         if (!Number.isInteger(order.number_of_pieces) || order.number_of_pieces <= 0) {
           await client.query('ROLLBACK');
-          return res.status(400).json({ message: `تعداد قطعات باید عدد صحیح مثبت باشد.` });
+          return res.status(400).json({ message: 'تعداد قطعات باید عدد صحیح مثبت باشد.' });
         }
       }
 
@@ -117,7 +105,7 @@ exports.updateOrder = async (req, res) => {
       if (order.estimated_arrival_days !== undefined) {
         if (!Number.isInteger(order.estimated_arrival_days) || order.estimated_arrival_days < 0) {
           await client.query('ROLLBACK');
-          return res.status(400).json({ message: `estimated_arrival_days باید عدد صحیح غیرمنفی باشد.` });
+          return res.status(400).json({ message: 'estimated_arrival_days باید عدد صحیح غیرمنفی باشد.' });
         }
       }
 
@@ -163,21 +151,33 @@ exports.updateOrder = async (req, res) => {
           `UPDATE orders SET ${orderFields.join(', ')} WHERE id = $${idx++} AND reception_id = $${idx++} AND customer_id = $${idx}`,
           orderValues
         );
-
-        const result = await client.query('SELECT piece_name FROM orders WHERE id = $1', [order_id]);
-        const pieceName = result.rows[0]?.piece_name || 'N/A';
-
-        await createLog(
-          req.user.id,
-          'ویرایش اطلاعات مشتری',
-          `اطلاعات سفارش "${pieceName}" به شماره پذیرش "${updatedReceptionNumber}" مربوط به مشتری "${updatedCustomerName}" ویرایش شد`,
-          customerPhone
-        );
       }
     }
 
     await client.query('COMMIT');
+
+    let updatedCustomerName = 'نامشخص';
+    let customerPhone = 'نامشخص';
+
+    const customerResult = await pool.query(
+      'SELECT customer_name, phone_number FROM customers WHERE id = $1',
+      [customerId]
+    );
+
+    if (customerResult.rows.length > 0) {
+      updatedCustomerName = customerResult.rows[0].customer_name || 'نامشخص';
+      customerPhone = customerResult.rows[0].phone_number || 'نامشخص';
+    }
+
+    await createLog(
+      req.user.id,
+      'ویرایش اطلاعات مشتری',
+      `اطلاعات مشتری "${updatedCustomerName}" ویرایش شد`,
+      customerPhone
+    );
+
     res.json({ message: 'ویرایش با موفقیت انجام شد.' });
+
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('❌ Error in updateOrder:', err);
