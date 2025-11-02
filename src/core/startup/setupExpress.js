@@ -6,7 +6,7 @@ const { apiLimiter } = require('../middlewares/rateLimiter');
 function setupExpress() {
     const app = express();
 
-    app.set('trust proxy', true);
+    app.set('trust proxy', 'loopback');
     app.use(cors());
     app.use(express.json());
     app.use(requestLogger);

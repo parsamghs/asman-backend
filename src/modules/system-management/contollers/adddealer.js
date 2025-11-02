@@ -1,6 +1,6 @@
-const pool = require('../../../../core/config/db');
+const pool = require('../../../core/config/db');
 const bcrypt = require('bcryptjs');
-const { CONSTANTS, validateCodeMeli, normalizeText } = require('../../../../core/utils/constants');
+const { CONSTANTS, validateCodeMeli, normalizeText } = require('../../../core/utils/constants');
 
 exports.addDealerAndUser = async (req, res) => {
   const client = await pool.connect();

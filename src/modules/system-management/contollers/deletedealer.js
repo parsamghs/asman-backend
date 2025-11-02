@@ -1,4 +1,4 @@
-const pool = require('../../db');
+const pool = require('../../../core/config/db');
 
 exports.deleteDealer = async (req, res) => {
   const { dealer_id } = req.params;
