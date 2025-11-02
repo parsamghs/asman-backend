@@ -29,5 +29,4 @@ app.use('/api/shared', sharedmodules);
 
 app.listen(port, () => {
   console.log(`Server is running ✅`);
-  require("./src/shared_modules/telegram-bot")();
 });
