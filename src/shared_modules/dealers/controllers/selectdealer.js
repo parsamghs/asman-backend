@@ -24,6 +24,7 @@ exports.selectDealer = async (req, res) => {
       return res.status(400).json({ message: 'انتخاب نمایندگی الزامی است.' });
     }
 
+    // بررسی دسترسی کاربر به نمایندگی
     const userDealerRes = await pool.query(
       'SELECT * FROM user_dealers WHERE user_id = $1 AND dealer_id = $2',
       [userId, selected_dealer_id]
@@ -34,7 +35,7 @@ exports.selectDealer = async (req, res) => {
     }
 
     const dealerRes = await pool.query(
-      'SELECT dealer_name, category, remaining_subscription FROM dealers WHERE id = $1',
+      'SELECT dealer_name, category FROM dealers WHERE id = $1',
       [selected_dealer_id]
     );
 
@@ -43,10 +44,6 @@ exports.selectDealer = async (req, res) => {
     }
 
     const dealer = dealerRes.rows[0];
-
-    if (dealer.remaining_subscription <= 0) {
-      return res.status(403).json({ message: 'اشتراک نمایندگی به پایان رسیده است.' });
-    }
 
     const userRes = await pool.query('SELECT id, role FROM login WHERE id = $1', [userId]);
     const user = userRes.rows[0];

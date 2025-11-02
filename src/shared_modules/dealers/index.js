@@ -7,7 +7,7 @@ router.use('/modules', require('./routes/getmodulesRoute'));
 
 router.use('/select-module', require('./routes/selectmoduleRoute'));
 
-router.use('user-dealers', require('./routes/getuserDealesRoute'));
+router.use('/user-dealers', require('./routes/getuserDealesRoute'));
 
 router.use('/select-dealer', require('./routes/selectdealerRoute'));
 

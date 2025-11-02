@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../../../core/middlewares/authMiddleware');
 const roleMiddleware = require('../../../core/middlewares/roleMiddleware');
-const dealerAccessMiddleware = require('../../../core/middlewares/dealerAccessMiddleware');
+// const dealerAccessMiddleware = require('../../../core/middlewares/dealerAccessMiddleware');
 const UpdateStats = require('../../../core/middlewares/updatestatsMiddleware');
 const {getUserDealers} = require('../controllers/getuserdealers');
 
 
-router.get('/', authMiddleware, dealerAccessMiddleware, roleMiddleware('مدیریت'), UpdateStats, getUserDealers);
+router.get('/', authMiddleware, roleMiddleware('مدیریت'), UpdateStats, getUserDealers);
 
 
 module.exports = router;
