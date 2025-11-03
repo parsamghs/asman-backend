@@ -24,7 +24,6 @@ exports.selectDealer = async (req, res) => {
       return res.status(400).json({ message: 'انتخاب نمایندگی الزامی است.' });
     }
 
-    // بررسی دسترسی کاربر به نمایندگی
     const userDealerRes = await pool.query(
       'SELECT * FROM user_dealers WHERE user_id = $1 AND dealer_id = $2',
       [userId, selected_dealer_id]
@@ -48,17 +47,24 @@ exports.selectDealer = async (req, res) => {
     const userRes = await pool.query('SELECT id, role FROM login WHERE id = $1', [userId]);
     const user = userRes.rows[0];
 
-    const finalToken = jwt.sign(
-      {
-        id: user.id,
-        role: user.role,
-        dealer_id: selected_dealer_id,
-        dealer_name: dealer.dealer_name,
-        category: dealer.category
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+    const payload = {
+      id: user.id,
+      role: user.role,
+      dealer_id: selected_dealer_id,
+      dealer_name: dealer.dealer_name,
+      category: dealer.category
+    };
+
+    if (decoded?.module !== undefined) {
+      payload.module = decoded.module;
+    }
+    if (decoded?.remaining_subscription !== undefined) {
+      payload.remaining_subscription = decoded.remaining_subscription;
+    }
+
+    const finalToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN
+    });
 
     res.json({
       token: finalToken,

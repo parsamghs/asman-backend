@@ -1,29 +1,36 @@
-const pool = require('../config/db');
+const jwt = require('jsonwebtoken');
 
-const dealerAccessMiddleware = async (req, res, next) => {
+const dealerAccessMiddleware = (req, res, next) => {
   try {
-    const { dealer_id, role } = req.user;
+    const authHeader = req.headers['authorization'];
 
-    if (!dealer_id) {
-      return res.status(400).json({ message: 'کد نمایندگی کاربر موجود نیست.' });
+    if (!authHeader) {
+      return res.status(401).json({ message: 'توکن موجود نیست.' });
     }
 
-    const result = await pool.query(
-      'SELECT remaining_subscription FROM dealers WHERE id = $1',
-      [dealer_id]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: 'نمایندگی یافت نشد.' });
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'توکن نامعتبر است.' });
     }
 
-    const remainingSubscription = result.rows[0].remaining_subscription;
+    const decoded = jwt.decode(token);
 
-    if (remainingSubscription <= 0) {
+    if (!decoded || !decoded.dealer_id) {
+      return res.status(400).json({ message: 'توکن نامعتبر یا اطلاعات نمایندگی موجود نیست.' });
+    }
+
+    const { dealer_id, remaining_subscription } = decoded;
+
+    if (remaining_subscription === undefined) {
+      return res.status(400).json({ message: 'میزان اشتراک در توکن موجود نیست.' });
+    }
+
+    if (remaining_subscription <= 0) {
       return res.status(403).json({ message: 'اشتراک شما تمام شده است. لطفاً برای تمدید اقدام کنید.' });
     }
 
     req.dealer_id = dealer_id;
+
     next();
 
   } catch (error) {
