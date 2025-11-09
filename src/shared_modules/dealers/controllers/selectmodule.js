@@ -3,18 +3,18 @@ const jwt = require('jsonwebtoken');
 
 exports.selectModule = async (req, res) => {
   try {
-    const { module_id } = req.params;
+    const { module } = req.body;
     const decoded = req.user;
 
-    if (!module_id) {
-      return res.status(400).json({ message: 'module_id الزامی است' });
+    if (!module) {
+      return res.status(400).json({ message: 'نام ماژول (module) الزامی است.' });
     }
 
     const moduleRes = await pool.query(
       `SELECT id, dealer_id, module, remaining_subscription, license
        FROM dealer_modules
-       WHERE id = $1 AND dealer_id = $2`,
-      [module_id, decoded.dealer_id]
+       WHERE module = $1 AND dealer_id = $2`,
+      [module, decoded.dealer_id]
     );
 
     const moduleRecord = moduleRes.rows[0];

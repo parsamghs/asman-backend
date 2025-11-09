@@ -5,7 +5,7 @@ const UpdateStats = require('../../../core/middlewares/updatestatsMiddleware');
 const {selectModule} = require('../controllers/selectmodule');
 
 
-router.post('/:module_id', authMiddleware, UpdateStats, selectModule);
+router.post('/', authMiddleware, UpdateStats, selectModule);
 
 
 module.exports = router;
