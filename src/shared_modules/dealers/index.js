@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
 
-const authMiddleware = require('../../core\/middlewares/authMiddleware');
+const authMiddleware = require('../../core/middlewares/authMiddleware');
 const dealerAccessMiddleware= require('../../core/middlewares/dealerAccessMiddleware');
 const roleMiddleware = require('../../core/middlewares/roleMiddleware');
 const UpdateStats = require('../../core/middlewares/updatestatsMiddleware');
 
-const {getRemainingSubscription} = require('../controllers/getremainingsubscription');
-const {getDealerModules} = require('../controllers/getmodules');
-const {getUserDealers} = require('../controllers/getuserdealers');
-const {selectModule} = require('../controllers/selectmodule');
-const {selectDealer} = require('../controllers/selectdealer');
+const {getRemainingSubscription} = require('../dealers/controllers/getremainingsubscription');
+const {getDealerModules} = require('../dealers/controllers/getmodules');
+const {getUserDealers} = require('../dealers/controllers/getuserdealers');
+const {selectModule} = require('../dealers/controllers/selectmodule');
+const {selectDealer} = require('../dealers/controllers/selectdealer');
 
 const subscriptionmiddlewares = [
     authMiddleware,

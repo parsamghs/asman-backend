@@ -31,11 +31,12 @@ const authAllOrdersRoles = [authMiddleware, dealerAccessMiddleware, roleMiddlewa
 const authUpdateOrderRoles = [authMiddleware, dealerAccessMiddleware, roleMiddleware('انباردار', 'حسابدار','پذیرش','مدیریت'), UpdateStats];
 const authUpdateMultipleStatusRoles = [authMiddleware, dealerAccessMiddleware, roleMiddleware('انباردار','مدیریت','پذیرش','حسابدار'), UpdateStats];
 const authLostOrdersRoles = [authMiddleware, dealerAccessMiddleware, roleMiddleware('انباردار','مدیریت'), UpdateStats];
+const homedashboardmiddlewares =  [authMiddleware, roleMiddleware('انباردار','مدیریت','پذیرش','حسابدار'), UpdateStats];
 
 router.get('/all', authAllOrdersRoles, getAllOrders);
 router.get('/get-cars', authAllOrdersRoles, getAllCars);
 router.get('/getlostorders', authLostOrdersRoles, getLostOrders);
-router.get('/orders-count', authUpdateMultipleStatusRoles, getOrderscounts);
+router.get('/orders-count', homedashboardmiddlewares, getOrderscounts);
 router.get('/search-orders', authAllOrdersRoles, searchOrders);
 router.get('/partname-suggest/:partname_id', authAdminOrWarehouse, suggestPartsByName);
 router.get('/suggest-parts', authAdminOrWarehouse, suggestParts);
