@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 
 const authMiddleware = require('../../core/middlewares/authMiddleware');
-const dealerAccessMiddleware= require('../../core/middlewares/dealerAccessMiddleware');
 const roleMiddleware = require('../../core/middlewares/roleMiddleware');
 const UpdateStats = require('../../core/middlewares/updatestatsMiddleware');
 
@@ -14,13 +13,11 @@ const {selectDealer} = require('../dealers/controllers/selectdealer');
 
 const subscriptionmiddlewares = [
     authMiddleware,
-    dealerAccessMiddleware,
     roleMiddleware('مدیریت','پذیرش','انباردار','حسابدار'),
     UpdateStats];
 
 const adminmiddlewares = [
     authMiddleware,
-    dealerAccessMiddleware,
     roleMiddleware('مدیریت'),
     UpdateStats];
 
