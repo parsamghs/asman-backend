@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 
 const authMiddleware = require('../../../core/middlewares/authMiddleware');
-const roleMiddleware = require('../../../core/middlewares/roleMiddleware');
 const dealerAccessMiddleware = require('../../../core/middlewares/dealerAccessMiddleware');
+const roleMiddleware = require('../../../core/middlewares/roleMiddleware');
 const UpdateStats = require('../../../core/middlewares/updatestatsMiddleware');
 
-const { updateSetting } = require('../controllers/settingcontrollers/updatesetting');
 const { getSetting } = require('../controllers/settingcontrollers/getsetting');
+const { updateSetting } = require('../controllers/settingcontrollers/updatesetting');
 
 const settingmiddlewares = [
     authMiddleware,
@@ -16,6 +16,7 @@ const settingmiddlewares = [
     UpdateStats];
 
 router.get('/get-setting', settingmiddlewares, getSetting);
+
 router.post('/update-setting', settingmiddlewares, updateSetting);
 
 module.exports = router;
