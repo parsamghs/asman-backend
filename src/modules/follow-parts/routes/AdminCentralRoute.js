@@ -1,16 +1,31 @@
 const express = require('express');
 const router = express.Router();
+const authMiddleware = require('../../../core/middlewares/authMiddleware');
+const dealerAccessMiddleware = require('../../../core/middlewares/dealerAccessMiddleware');
+const roleMiddleware = require('../../../core/middlewares/roleMiddleware');
+const UpdateStats = require('../../../core/middlewares/updatestatsMiddleware');
 
-router.use('/addpart', require('./AdminRoutes/AddPartRoute'));
+const { getLogs } = require('../controllers/admincontrollers/getlogs');
+const { getUsersWithStatus } = require('../controllers/admincontrollers/getuserswithstats');
+const { addPart } = require('../controllers/admincontrollers/addpart');
+const { addUser } = require('../controllers/admincontrollers/adduser');
+const { updateUser } = require('../controllers/admincontrollers/updateuser');
+const { deleteUser } = require('../controllers/admincontrollers/deleteuser');
 
-router.use('/adduser', require('./AdminRoutes/AddUserRoute'));
+const adminmiddlewares = [
+    authMiddleware,
+    dealerAccessMiddleware, 
+    roleMiddleware('مدیریت'), 
+    UpdateStats];
 
-router.use('/deleteuser', require('./AdminRoutes/DeleteUserRoute'));
+router.get('/getlogs', adminmiddlewares, getLogs);
+router.get('/usersstats', adminmiddlewares, getUsersWithStatus);
 
-router.use('/updateuser', require('./AdminRoutes/UpdateUserRoute'));
+router.post('/addpart', adminmiddlewares, addPart);
+router.post('/adduser', adminmiddlewares, addUser);
 
-router.use('/usersstats', require('./AdminRoutes/GetUsersWithStatsRoute'));
+router.delete('/deleteuser/:id', adminmiddlewares, deleteUser);
 
-router.use('/getlogs', require('./AdminRoutes/GetLogsRoute'));
+router.patch('/updateuser/:id', adminmiddlewares, updateUser);
 
 module.exports = router;
