@@ -9,7 +9,7 @@ exports.getDealerModules = async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, dealer_id, module, remaining_subscription, license
+      `SELECT id, dealer_id, module, remaining_subscription, status
        FROM dealer_modules
        WHERE dealer_id = $1`,
       [dealer_id]

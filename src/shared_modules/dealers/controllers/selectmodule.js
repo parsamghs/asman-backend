@@ -11,7 +11,7 @@ exports.selectModule = async (req, res) => {
     }
 
     const moduleRes = await pool.query(
-      `SELECT id, dealer_id, module, remaining_subscription, license
+      `SELECT id, dealer_id, module, remaining_subscription, status
        FROM dealer_modules
        WHERE module = $1 AND dealer_id = $2`,
       [module, decoded.dealer_id]
@@ -23,8 +23,8 @@ exports.selectModule = async (req, res) => {
       return res.status(404).json({ message: 'ماژول مورد نظر پیدا نشد.' });
     }
 
-    if (!moduleRecord.license) {
-      return res.status(403).json({ message: 'این ماژول برای نمایندگی شما فعال نیست.' });
+    if (moduleRecord.status === 'inactive') {
+      return res.status(403).json({ message: 'این ماژول برای نمایندگی شما غیرفعال است.' });
     }
 
     if (moduleRecord.remaining_subscription <= 0) {
@@ -38,7 +38,8 @@ exports.selectModule = async (req, res) => {
       dealer_name: decoded.dealer_name,
       category: decoded.category,
       module: moduleRecord.module,
-      remaining_subscription: moduleRecord.remaining_subscription
+      remaining_subscription: moduleRecord.remaining_subscription,
+      status: moduleRecord.status
     };
 
     const newToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
@@ -48,7 +49,8 @@ exports.selectModule = async (req, res) => {
     res.json({
       token: newToken,
       module: moduleRecord.module,
-      remaining_subscription: moduleRecord.remaining_subscription
+      remaining_subscription: moduleRecord.remaining_subscription,
+      status: moduleRecord.status
     });
 
   } catch (err) {
