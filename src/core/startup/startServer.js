@@ -21,7 +21,7 @@ function startServer() {
 
   server.listen(port, () => {
     console.log(`\x1b[32mServer is running`);
-    // require('../../eita-bot')();
+    require('../../eita-bot')();
   });
 
   return { app, server, io }; 
