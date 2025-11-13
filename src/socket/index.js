@@ -1,6 +1,6 @@
 const getserverstatshandler = require('./handler/serverLogsstats');
 const socketEvents = require('./socketevents');
-const authMiddleware = require('../middlewares/authMiddleware');
+const authMiddleware = require('../core/middlewares/authMiddleware');
 
 module.exports = (io) => {
   io.use((socket, next) => {

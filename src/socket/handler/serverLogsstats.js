@@ -1,4 +1,4 @@
-const pool = require('../../db');
+const pool = require('../../core/config/db');
 
 async function getserverstatshandler({ from, to }) {
   const fromDate = from ? new Date(from) : null;

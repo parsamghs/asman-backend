@@ -1,6 +1,6 @@
 const logger = require('../config/winston');
-const socketEvents = require('../socket/socketevents');
-const pool = require('../db');
+const socketEvents = require('../../socket/socketevents');
+const pool = require('../config/db');
 
 function requestLogger(req, res, next) {
   const start = process.hrtime.bigint();
