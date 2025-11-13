@@ -20,10 +20,7 @@
     "dotenv": "^16.6.1",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
-<<<<<<< HEAD
-=======
     "express-rate-limit": "^8.1.0",
->>>>>>> change-dealers-format
     "form-data": "^4.0.4",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
