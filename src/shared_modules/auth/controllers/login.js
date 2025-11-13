@@ -48,6 +48,10 @@ exports.login = async (req, res) => {
 
     const dealer = dealersRes.rows[0];
 
+    if (dealer.dealer_name !== 'تست') {
+      return res.status(403).json({ message: 'به دلیل تغییرات سیستم، فعلاً از دسترس خارج است لطفا چند دقیقه دیگر تلاش کنید' });
+    }
+
     const finalToken = jwt.sign(
       {
         id: user.id,
