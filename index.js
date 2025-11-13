@@ -1,7 +1,7 @@
-require('dotenv').config({
-  path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
-});
+require('./src/core/config/env');
+const { startServer } = require('./src/core/startup/startServer');
 
+<<<<<<< HEAD
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -58,3 +58,6 @@ server.listen(port, () => {
   require("./eita-bot")();
 });
 
+=======
+startServer();
+>>>>>>> change-dealers-format
