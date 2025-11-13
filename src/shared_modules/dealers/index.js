@@ -22,10 +22,10 @@ const adminmiddlewares = [
     UpdateStats];
 
 router.get('/subscription', subscriptionmiddlewares, getRemainingSubscription);
-router.get('/modules', authMiddleware, UpdateStats, getDealerModules);
+router.get('/modules', subscriptionmiddlewares, UpdateStats, getDealerModules);
 router.get('/user-dealers', adminmiddlewares, getUserDealers);
 
-router.post('/select-module', adminmiddlewares, selectModule);
+router.post('/select-module', subscriptionmiddlewares, selectModule);
 router.post('/select-dealer', adminmiddlewares, selectDealer);
 
 module.exports = router;
