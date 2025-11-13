@@ -4,9 +4,8 @@ const pool = require('../config/db');
 async function decreaseRemainingSubscription() {
   const client = await pool.connect();
   try {
-    console.log('🔄 شروع کاهش remaining_subscription نمایندگی‌ها...');
     const result = await client.query(`
-      UPDATE dealers
+      UPDATE dealer_modules
       SET remaining_subscription = remaining_subscription - 1
       WHERE remaining_subscription > 0
       RETURNING id
