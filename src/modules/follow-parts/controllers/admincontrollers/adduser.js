@@ -42,6 +42,13 @@ exports.addUser = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [name, last_name, code_meli, hashedPassword, role, dealer_id]
     );
+    const newUser = await pool.query('SELECT id FROM login WHERE code_meli=$1', [code_meli]);
+    const userId = newUser.rows[0].id;
+
+    await pool.query(
+      `INSERT INTO user_dealers (user_id, dealer_id) VALUES ($1, $2)`,
+      [userId, dealer_id]
+    );
 
     res.status(201).json({ message: 'کاربر با موفقیت اضافه شد.' });
   } catch (err) {
